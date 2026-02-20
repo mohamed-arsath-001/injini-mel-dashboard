@@ -1,0 +1,6 @@
+Flask==3.0.0
+pyairtable==2.2.0
+pandas==2.1.1
+python-dotenv==1.0.0
+google-generativeai==0.4.0
+gunicorn==21.2.0

@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Injini | Venture Dashboard</title>
+    <meta name="description"
+        content="Injini MEL Dashboard — Real-time monitoring of EdTech venture performance across all cohorts.">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Montserrat', 'sans-serif'] },
+                    colors: {
+                        injiniBlue: '#001c94',
+                        injiniGold: '#ffd100',
+                        injiniGreen: '#008a40',
+                        injiniRed: '#ff585f'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-slate-50 font-sans text-slate-800">
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-injiniBlue text-white flex flex-col shadow-xl z-10">
+            <div class="p-6">
+                <img src="/static/logo.svg" alt="Injini Logo" class="h-10 mb-2">
+                <p class="text-xs text-blue-200 mt-1 uppercase tracking-widest">Venture Management</p>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <a href="#dashboard-top"
+                    class="block px-4 py-3 bg-blue-800/50 rounded-lg text-sm font-medium border-l-4 border-injiniGold">Dashboard</a>
+                <a href="#jobs-section"
+                    class="block px-4 py-3 hover:bg-blue-800/50 rounded-lg text-sm font-medium text-blue-100 transition">Jobs
+                    Indicators</a>
+                <a href="#reach-section"
+                    class="block px-4 py-3 hover:bg-blue-800/50 rounded-lg text-sm font-medium text-blue-100 transition">Reach
+                    &amp; Impact</a>
+                <a href="#charts-section"
+                    class="block px-4 py-3 hover:bg-blue-800/50 rounded-lg text-sm font-medium text-blue-100 transition">Charts</a>
+                <a href="#investment-ledger"
+                    class="block px-4 py-3 hover:bg-blue-800/50 rounded-lg text-sm font-medium text-blue-100 transition">Investment
+                    Ledger</a>
+                <a href="#cohort-reports"
+                    class="block px-4 py-3 hover:bg-blue-800/50 rounded-lg text-sm font-medium text-blue-100 transition">Cohort
+                    Reports</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="flex-1 overflow-y-auto p-8">
+
+            <!-- Header + Filter -->
+            <div id="dashboard-top" class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-900">Program Overview</h2>
+                    <p class="text-slate-500 mt-1">Live data feed from Airtable CRM.</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <select id="cohort-filter"
+                        class="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-4 py-2.5 shadow-sm focus:ring-2 focus:ring-injiniBlue">
+                        <option value="all">All Cohorts</option>
+                        <option value="Cohort 1">Cohort 1</option>
+                        <option value="Cohort 2">Cohort 2</option>
+                        <option value="Cohort 3">Cohort 3</option>
+                        <option value="Cohort 4">Cohort 4</option>
+                    </select>
+                    <a href="/export"
+                        class="bg-injiniBlue hover:bg-blue-800 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Export Report
+                    </a>
+                </div>
+            </div>
+
+            <!-- KPI CARDS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 mt-8">
+                {% set ov = kpis.Program_Overview %}
+                <div
+                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sales (YTD)</p>
+                        <h4 class="text-2xl font-bold text-slate-800">R {{ "{:,.0f}".format(ov.Total_Sales_ZAR) }}</h4>
+                    </div>
+                    <div class="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center text-injiniBlue">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Net Jobs Created</p>
+                        <h4 class="text-2xl font-bold text-slate-800">{{ ov.Net_Jobs_Created }}</h4>
+                    </div>
+                    <div class="w-11 h-11 rounded-full bg-green-50 flex items-center justify-center text-injiniGreen">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Sales Growth
+                        </p>
+                        {% set sg = ov['Average_Sales_Growth_%'] %}
+                        <h4 class="text-2xl font-bold text-slate-800">{% if sg == "Insufficient Data" %}N/A{% else %}{{
+                            sg }}%{% endif %}</h4>
+                    </div>
+                    <div class="w-11 h-11 rounded-full bg-yellow-50 flex items-center justify-center text-injiniGold">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Profit Growth
+                        </p>
+                        {% set pg = ov['Average_Profit_Growth_%'] %}
+                        <h4 class="text-2xl font-bold text-slate-800">{% if pg == "Insufficient Data" %}N/A{% else %}{{
+                            pg }}%{% endif %}</h4>
+                    </div>
+                    <div class="w-11 h-11 rounded-full bg-emerald-50 flex items-center justify-center text-injiniGreen">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI CHAT FLOATING BUTTON -->
+            <div class="fixed bottom-8 right-8 z-50">
+                <button id="injini-ai-btn"
+                    class="bg-white text-injiniBlue p-0 rounded-full shadow-2xl hover:scale-105 transition-transform duration-200 border-2 border-injiniGold w-16 h-16 flex items-center justify-center group overflow-hidden">
+                    <img src="/static/logo.svg" alt="Injini AI" class="w-10 h-10 object-contain ml-1 mt-1">
+                    <span class="absolute -top-2 -right-2 w-5 h-5 bg-injiniRed rounded-full animate-ping"></span>
+                </button>
+            </div>
+
+            <!-- AI CHAT MODAL -->
+            <div id="ai-chat-modal"
+                class="fixed bottom-28 right-8 w-96 bg-white rounded-2xl shadow-2xl z-50 border border-slate-100 hidden flex flex-col overflow-hidden transition-all duration-300 transform scale-95 opacity-0 origin-bottom-right"
+                style="height: 500px;">
+                <!-- Header -->
+                <div
+                    class="bg-gradient-to-r from-injiniBlue to-blue-900 p-4 flex justify-between items-center text-white">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                            <img src="/static/logo.svg" class="w-5 h-5">
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm">Injini AI</h3>
+                            <p class="text-[10px] text-blue-200 flex items-center gap-1"><span
+                                    class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online</p>
+                        </div>
+                    </div>
+                    <button id="close-chat" class="text-white/80 hover:text-white transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Messages Area -->
+                <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 space-y-4 text-sm">
+                    <!-- Bot Welcome -->
+                    <div class="flex gap-3">
+                        <div
+                            class="w-8 h-8 rounded-full bg-injiniGold/20 flex-shrink-0 flex items-center justify-center text-xs font-bold text-injiniBlue border border-injiniGold">
+                            AI</div>
+                        <div
+                            class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-slate-700 border border-slate-100">
+                            Hello! I'm your Injini data assistant. Ask me anything about the venture database, like
+                            "Which cohort created the most jobs?" 🚀
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="p-4 bg-white border-t border-slate-100">
+                    <form id="chat-form" class="relative">
+                        <input type="text" id="chat-input" placeholder="Ask a question about the data..."
+                            class="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-injiniBlue text-sm shadow-inner transition-all">
+                        <button type="submit"
+                            class="absolute right-2 top-2 p-1.5 bg-injiniBlue text-white rounded-lg hover:bg-blue-800 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- VENTURE CARDS -->
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Venture Performance Details</h3>
+            <div id="venture-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+                {% for v in kpis.Venture_Data %}
+                {% set v_sales = v['Total Sales (R)'] %}
+                {% set v_sg = v['Sales Growth %'] %}
+                {% set v_pg = v['Profit Growth %'] %}
+                {% set v_jobs = v['Latest Jobs'] %}
+                {% set v_subs = v['Total Subscribers'] %}
+                {% set v_schools = v['Total Schools'] %}
+                {% set v_flags = v['Red Flags'] %}
+                <div class="venture-card bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition cursor-default relative"
+                    data-cohort="{{ v['Cohort'] }}">
+                    {% if v_flags %}<span class="absolute top-3 right-3 w-3 h-3 bg-injiniRed rounded-full animate-pulse"
+                        title="{{ v_flags | join(', ') }}"></span>{% endif %}
+                    <div class="flex justify-between items-start mb-3">
+                        <h5 class="font-bold text-slate-900 truncate pr-2">{{ v['Business Name'] }}</h5>
+                        <span
+                            class="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded uppercase tracking-wide whitespace-nowrap">{{
+                            v['Cohort'] }}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 mb-3">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">Total Sales</p>
+                            <p class="font-bold text-slate-800 text-sm mt-0.5">R {{ "{:,.0f}".format(v_sales) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">Sales Growth</p>
+                            {% if v_sg == "Insufficient Data" %}
+                            <p class="font-bold text-slate-400 mt-0.5 text-xs">Need 6 Mo.</p>
+                            {% elif v_sg < 0 %} <p class="font-bold text-injiniRed text-sm mt-0.5">{{ v_sg }}%</p>
+                                {% else %}
+                                <p class="font-bold text-injiniGreen text-sm mt-0.5">+{{ v_sg }}%</p>
+                                {% endif %}
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">Profit Growth</p>
+                            {% if v_pg == "Insufficient Data" %}
+                            <p class="font-bold text-slate-400 mt-0.5 text-xs">Need 6 Mo.</p>
+                            {% elif v_pg < 0 %} <p class="font-bold text-injiniRed text-sm mt-0.5">{{ v_pg }}%</p>
+                                {% else %}
+                                <p class="font-bold text-injiniGreen text-sm mt-0.5">+{{ v_pg }}%</p>
+                                {% endif %}
+                        </div>
+                    </div>
+                    <div class="pt-3 border-t border-slate-50 grid grid-cols-3 gap-3">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">Net Jobs</p>
+                            {% if v_jobs < 0 %} <p class="font-bold text-injiniRed text-sm mt-0.5">{{ v_jobs }}</p>
+                                {% else %}
+                                <p class="font-bold text-injiniGreen text-sm mt-0.5">+{{ v_jobs }}</p>
+                                {% endif %}
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">Subscribers</p>
+                            <p class="font-bold text-slate-800 text-sm mt-0.5">{{ "{:,}".format(v_subs) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">Schools</p>
+                            <p class="font-bold text-slate-800 text-sm mt-0.5">{{ "{:,}".format(v_schools) }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- ====== JOBS INDICATORS ====== -->
+            {% set js = jobs_summary %}
+            <div id="jobs-section" class="mb-10 scroll-mt-8">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Jobs Indicators</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Jobs</p>
+                        <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(js['Total Jobs']) }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Jobs</p>
+                        <p
+                            class="text-2xl font-bold {% if js['New Jobs'] >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
+                            {{ "{:+,}".format(js['New Jobs']) }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Female Jobs</p>
+                        <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(js['Female Jobs']) }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Youth Jobs</p>
+                        <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(js['Youth Jobs']) }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Female</p>
+                        <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Female Jobs']) }}
+                        </p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Youth</p>
+                        <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Youth Jobs']) }}
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                    <div id="jobs-chart" style="min-height: 320px;"></div>
+                </div>
+            </div>
+
+            <!-- ====== REACH & IMPACT ====== -->
+            {% set rs = reach_summary %}
+            <div id="reach-section" class="mb-10 scroll-mt-8">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Reach &amp; Impact</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Subscribers</p>
+                        <p class="text-3xl font-bold text-slate-800 mt-1">{{ "{:,}".format(rs['Total Subscribers']) }}
+                        </p>
+                        <p class="text-xs text-slate-400 mt-1">Students + Teachers</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Subscribers Reached
+                        </p>
+                        <p class="text-3xl font-bold text-injiniGreen mt-1">{{ "{:,}".format(rs['New Subscribers']) }}
+                        </p>
+                        <p class="text-xs text-slate-400 mt-1">Cumulative new sign-ups</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Schools</p>
+                        <p class="text-3xl font-bold text-injiniBlue mt-1">{{ "{:,}".format(rs['Total Schools']) }}</p>
+                        <p class="text-xs text-slate-400 mt-1">Solutions being tested in</p>
+                    </div>
+                </div>
+                <!-- Disaggregation -->
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                    <h4 class="text-sm font-bold text-slate-600 uppercase tracking-wider mb-4">Learner Disaggregation
+                    </h4>
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex items-center gap-3 bg-pink-50 rounded-lg px-5 py-3">
+                            <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-pink-400 font-semibold uppercase">Female Students</p>
+                                <p class="text-xl font-bold text-pink-600">{{ rs['Female %'] }}%</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 bg-amber-50 rounded-lg px-5 py-3">
+                            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-amber-400 font-semibold uppercase">Rural Students</p>
+                                <p class="text-xl font-bold text-amber-600">{{ rs['Rural %'] }}%</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 bg-violet-50 rounded-lg px-5 py-3">
+                            <div class="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-violet-400 font-semibold uppercase">Students w/ Disabilities</p>
+                                <p class="text-xl font-bold text-violet-600">{{ rs['Disability %'] }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== CHARTS ====== -->
+            <div id="charts-section" class="mb-10 scroll-mt-8">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Performance Trends</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Sales Over Time</h4>
+                        <div id="sales-chart" style="min-height: 320px;"></div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Profit Over Time</h4>
+                        <div id="profit-chart" style="min-height: 320px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== RED FLAGS ====== -->
+            {% if red_flags %}
+            <div class="mb-10">
+                <h3 class="text-lg font-bold text-injiniRed mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    Red Flag Alerts ({{ red_flags | length }})
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for rf in red_flags %}
+                    <div class="bg-red-50 rounded-xl p-4 border border-red-100">
+                        <p class="font-bold text-slate-900 text-sm">{{ rf['Business Name'] }}</p>
+                        <p class="text-xs text-slate-400 uppercase mt-0.5">{{ rf['Cohort'] }}</p>
+                        <div class="mt-2 flex flex-wrap gap-1.5">
+                            {% for flag in rf['Flags'] %}
+                            <span class="text-[10px] font-bold px-2 py-1 bg-red-100 text-injiniRed rounded-full">{{ flag
+                                }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ====== INVESTMENT LEDGER ====== -->
+            <div id="investment-ledger" class="mb-10 scroll-mt-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-slate-800">Investment Ledger</h3>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider">Raw Financial Data</span>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Venture</th>
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Cohort</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Total Sales</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Net Profit</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Grants &amp; Investments</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for item in investment_ledger %}
+                                {% set inv_profit = item['Net Profit'] %}
+                                {% set inv_grants = item['Grants & Investments'] %}
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="px-6 py-4 font-semibold text-slate-900">{{ item['Business Name'] }}</td>
+                                    <td class="px-6 py-4"><span
+                                            class="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded uppercase">{{
+                                            item['Cohort'] }}</span></td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">R {{
+                                        "{:,.0f}".format(item['Total Sales']) }}</td>
+                                    <td
+                                        class="px-6 py-4 text-right font-mono font-semibold {% if inv_profit >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                        R {{ "{:,.0f}".format(inv_profit) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">R {{
+                                        "{:,.0f}".format(inv_grants) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== COHORT REPORTS ====== -->
+            <div id="cohort-reports" class="mb-10 scroll-mt-8">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Cohort Reports</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% for c in cohort_summaries %}
+                    {% set c_sales = c['Total Sales'] %}
+                    {% set c_profit = c['Total Profit'] %}
+                    {% set c_jobs = c['Total Jobs'] %}
+                    {% set c_learners = c['Total Learners'] %}
+                    {% set c_msg = c['Median Sales Growth'] %}
+                    {% set c_mpg = c['Median Profit Growth'] %}
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-5">
+                            <h4 class="font-bold text-slate-900 text-lg">{{ c['Cohort'] }}</h4>
+                            <span
+                                class="text-xs font-bold px-3 py-1 bg-injiniBlue/10 text-injiniBlue rounded-full uppercase">{{
+                                c['Ventures'] }} Ventures</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-50 rounded-lg p-3">
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Total Sales</p>
+                                <p class="text-lg font-bold text-slate-800">R {{ "{:,.0f}".format(c_sales) }}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3">
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Total Profit</p>
+                                <p
+                                    class="text-lg font-bold {% if c_profit >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                    R {{ "{:,.0f}".format(c_profit) }}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3">
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Total Jobs</p>
+                                <p class="text-lg font-bold text-slate-800">{{ "{:,.0f}".format(c_jobs) }}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3">
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Subscribers</p>
+                                <p class="text-lg font-bold text-injiniBlue">{{ "{:,.0f}".format(c_learners) }}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3">
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Median Sales Growth
+                                </p>
+                                {% if c_msg == "Insufficient Data" %}
+                                <p class="text-lg font-bold text-slate-400">N/A</p>
+                                {% elif c_msg is number and c_msg < 0 %} <p class="text-lg font-bold text-injiniRed">{{
+                                    c_msg }}%</p>
+                                    {% else %}
+                                    <p class="text-lg font-bold text-injiniGreen">{{ c_msg }}%</p>
+                                    {% endif %}
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3">
+                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Median Profit Growth
+                                </p>
+                                {% if c_mpg == "Insufficient Data" %}
+                                <p class="text-lg font-bold text-slate-400">N/A</p>
+                                {% elif c_mpg is number and c_mpg < 0 %} <p class="text-lg font-bold text-injiniRed">{{
+                                    c_mpg }}%</p>
+                                    {% else %}
+                                    <p class="text-lg font-bold text-injiniGreen">{{ c_mpg }}%</p>
+                                    {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ====== JAVASCRIPT ====== -->
+    <script>
+        const tsData = {{ time_series_json | safe }};
+
+        // Cohort filter
+        document.getElementById('cohort-filter').addEventListener('change', function () {
+            const val = this.value;
+            document.querySelectorAll('.venture-card').forEach(card => {
+                card.style.display = (val === 'all' || card.dataset.cohort === val) ? '' : 'none';
+            });
+        });
+
+        const cohortColors = { 'Cohort 1': '#001c94', 'Cohort 2': '#008a40', 'Cohort 3': '#ffd100', 'Cohort 4': '#ff585f' };
+
+        // Sales chart
+        (function () {
+            const series = [];
+            for (const [cohort, data] of Object.entries(tsData.cohort || {})) {
+                series.push({ name: cohort, data: data.months.map((m, i) => ({ x: m, y: Math.round(data.sales[i]) })) });
+            }
+            if (tsData.program && tsData.program.months.length) {
+                series.push({ name: 'Program Total', data: tsData.program.months.map((m, i) => ({ x: m, y: Math.round(tsData.program.sales[i]) })) });
+            }
+            new ApexCharts(document.querySelector('#sales-chart'), {
+                chart: { type: 'line', height: 310, toolbar: { show: false }, fontFamily: 'Montserrat' },
+                series: series,
+                colors: Object.values(cohortColors).concat(['#374151']),
+                stroke: { width: 2.5, curve: 'smooth' },
+                xaxis: { type: 'category', labels: { rotate: -45, style: { fontSize: '10px' } } },
+                yaxis: { labels: { formatter: v => 'R ' + (v / 1000).toFixed(0) + 'k' } },
+                tooltip: { y: { formatter: v => 'R ' + v.toLocaleString() } },
+                legend: { position: 'top', fontSize: '11px' },
+                grid: { borderColor: '#f1f5f9' },
+            }).render();
+        })();
+
+        // Profit chart
+        (function () {
+            const series = [];
+            for (const [cohort, data] of Object.entries(tsData.cohort || {})) {
+                series.push({ name: cohort, data: data.months.map((m, i) => ({ x: m, y: Math.round(data.profit[i]) })) });
+            }
+            if (tsData.program && tsData.program.months.length) {
+                series.push({ name: 'Program Total', data: tsData.program.months.map((m, i) => ({ x: m, y: Math.round(tsData.program.profit[i]) })) });
+            }
+            new ApexCharts(document.querySelector('#profit-chart'), {
+                chart: { type: 'line', height: 310, toolbar: { show: false }, fontFamily: 'Montserrat' },
+                series: series,
+                colors: Object.values(cohortColors).concat(['#374151']),
+                stroke: { width: 2.5, curve: 'smooth' },
+                xaxis: { type: 'category', labels: { rotate: -45, style: { fontSize: '10px' } } },
+                yaxis: { labels: { formatter: v => 'R ' + (v / 1000).toFixed(0) + 'k' } },
+                tooltip: { y: { formatter: v => 'R ' + v.toLocaleString() } },
+                legend: { position: 'top', fontSize: '11px' },
+                grid: { borderColor: '#f1f5f9' },
+            }).render();
+        })();
+
+        // Jobs bar chart
+        (function () {
+            const categories = [];
+            const totalSeries = [];
+            for (const [cohort, data] of Object.entries(tsData.cohort || {})) {
+                categories.push(cohort);
+                const lastIdx = data.jobs.length - 1;
+                totalSeries.push(lastIdx >= 0 ? Math.round(data.jobs[lastIdx]) : 0);
+            }
+            new ApexCharts(document.querySelector('#jobs-chart'), {
+                chart: { type: 'bar', height: 310, toolbar: { show: false }, fontFamily: 'Montserrat' },
+                series: [{ name: 'Total Jobs', data: totalSeries }],
+                colors: ['#001c94'],
+                plotOptions: { bar: { borderRadius: 6, columnWidth: '50%' } },
+                xaxis: { categories: categories },
+                yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                grid: { borderColor: '#f1f5f9' },
+                legend: { position: 'top', fontSize: '11px' },
+            }).render();
+        })();
+
+        // ─── AI CHAT LOGIC ───
+        const chatBtn = document.getElementById('injini-ai-btn');
+        const chatModal = document.getElementById('ai-chat-modal');
+        const closeChat = document.getElementById('close-chat');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        // Toggle Chat
+        function toggleChat() {
+            if (chatModal.classList.contains('hidden')) {
+                chatModal.classList.remove('hidden');
+                setTimeout(() => {
+                    chatModal.classList.remove('opacity-0', 'scale-95');
+                    chatInput.focus();
+                }, 10);
+            } else {
+                chatModal.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    chatModal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        chatBtn.addEventListener('click', toggleChat);
+        closeChat.addEventListener('click', toggleChat);
+
+        // Add Message to UI
+        function addMessage(text, isUser = false) {
+            const div = document.createElement('div');
+            div.className = 'flex gap-3 ' + (isUser ? 'flex-row-reverse' : '');
+
+            const avatar = isUser
+                ? `<div class="w-8 h-8 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center text-xs font-bold text-slate-500">YOU</div>`
+                : `<div class="w-8 h-8 rounded-full bg-injiniGold/20 flex-shrink-0 flex items-center justify-center text-xs font-bold text-injiniBlue border border-injiniGold">AI</div>`;
+
+            const bubble = `<div class="${isUser ? 'bg-injiniBlue text-white' : 'bg-white text-slate-700 border border-slate-100'} p-3 rounded-2xl ${isUser ? 'rounded-tr-none' : 'rounded-tl-none'} shadow-sm max-w-[80%]">
+            ${text}
+        </div>`;
+
+            div.innerHTML = avatar + bubble;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Handle Submit
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = chatInput.value.trim();
+            if (!msg) return;
+
+            // Add user message
+            addMessage(msg, true);
+            chatInput.value = '';
+            chatInput.disabled = true;
+
+            // Show typing indicator
+            const typingId = 'typing-' + Date.now();
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'flex gap-3';
+            typingDiv.id = typingId;
+            typingDiv.innerHTML = `<div class="w-8 h-8 rounded-full bg-injiniGold/20 flex-shrink-0 flex items-center justify-center text-xs font-bold text-injiniBlue border border-injiniGold">AI</div>
+            <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-slate-500 border border-slate-100 italic">Thinking...</div>`;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+
+                const data = await res.json();
+                document.getElementById(typingId).remove();
+
+                // Format markdown-like bolding
+                const formattedResponse = data.response.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                addMessage(formattedResponse, false);
+
+            } catch (err) {
+                document.getElementById(typingId).remove();
+                addMessage("Sorry, I'm having trouble connecting to the server.", false);
+            } finally {
+                chatInput.disabled = false;
+                chatInput.focus();
+            }
+        });
+    </script>
+</body>
+
+</html>

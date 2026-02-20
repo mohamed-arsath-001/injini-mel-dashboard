@@ -1,0 +1,115 @@
+
+=== Cohort 1 (84 records, 37 fields) ===
+  - Active users students  - Narrow definition
+  - Active users Students - Broad Definition
+  - Active users teachers - Broad Definition
+  - Active users teachers - Narrow Definition
+  - Case study
+  - Company name
+  - Created By
+  - Educational output - additional resources
+  - Educational resourcing jobs - Female
+  - Educational resourcing jobs -Total
+  - Follow up and checks
+  - General Comment
+  - Income statement  
+  - Monthly net profit
+  - Monthly Sales
+  - Name
+  - Net new monthly subscribers  - students
+  - Net new monthly subscribers  - Teachers
+  - Operational jobs - female
+  - Operational jobs - Total
+  - Reporting check status
+  - Reporting month
+  - Subscribers - Female students
+  - Subscribers - Female teachers
+  - Subscription - Age 0-6 Students (Early child hood development)
+  - Subscription - Age 19 and above students (post secondary and adult learning)
+  - Subscription - Age 7 - 18 Students (Basic Education)
+  - Subscription - PeriUrban Student 
+  - Subscription - PeriUrban Teacher
+  - Subscription - Rural Students
+  - Subscription - Rural Teachers
+  - Subscription- Q1-3 Schools Students
+  - Subscription- Q1-3 Schools Teachers
+  - Theory of change
+  - Total Subscribers - Teachers
+  - Total Subscribers -Students
+  - Youth operational jobs
+
+=== Cohort 2 (84 records, 34 fields) ===
+  - Are there any people earning and income via your EdTech product
+  - Business name
+  - Case Study 
+  - Female educational resourcing Jobs 
+  - Female operational jobs
+  - If yes, please specify from whom this grant/ investment was made.
+  - Income Statement 
+  - Monthly Active users - Students
+  - Monthly Active users - Teachers
+  - Monthly Net Profit
+  - Monthly sales
+  - Name
+  - Net new monthly subscribers - Teachers 
+  - New grants and investments
+  - New Monthly Subscribers - Students
+  - Rand value of grant/investment
+  - Reach and Impact
+  - Reporting check status
+  - Reporting Month
+  - Subscribers - Female Students
+  - Subscribers - Female Teachers 
+  - Subscribers - Teachers with disabilities 
+  - Subscription - Q1-3 schools
+  - Subscription - Rural Students 
+  - Subscription - Rural teachers 
+  - Subscription - South African schools
+  - Subscription - Special needs schools
+  - Subscription - Students with disabilities
+  - Total Educational resourcing jobs 
+  - Total number of schools solution being tested in
+  - Total operational jobs 
+  - Total Subscribers - Students
+  - Total subscribers - Teachers 
+  - Youth operational jobs
+
+=== Cohort 3 (96 records, 36 fields) ===
+  - Are there any people earning and income via your EdTech product
+  - Business name
+  - Case Study 
+  - Female educational resourcing Jobs 
+  - Female operational jobs
+  - If yes, please specify from whom this grant/ investment was made.
+  - Income Statement 
+  - Monthly active subscribers (Schools/institutions)
+  - Monthly Active users - Students
+  - Monthly Active users - Teachers
+  - Monthly Net Profit
+  - Monthly sales
+  - Name
+  - Net new monthly subscribers - Teachers 
+  - New grants and investments
+  - New monthly subscribers (Schools/learning institutions)
+  - New Monthly Subscribers - Students
+  - Rand value of grant/investment
+  - Reach and Impact
+  - Reporting check status
+  - Reporting Month
+  - Subscribers - Female Students
+  - Subscribers - Female Teachers 
+  - Subscription - Q1-3 schools
+  - Subscription - Rural Students 
+  - Subscription - Rural teachers 
+  - Subscription - South African schools
+  - Subscription - Special needs schools
+  - Subscription - Students with disabilities
+  - Total Educational resourcing jobs 
+  - Total number of schools solution being tested in
+  - Total operational jobs 
+  - Total subscribers (Schools/learning institutions)
+  - Total Subscribers - Students
+  - Total subscribers - Teachers 
+  - Youth operational jobs
+
+=== Cohort 4: 0 records ===
