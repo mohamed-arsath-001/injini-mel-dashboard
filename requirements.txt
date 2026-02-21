@@ -3,4 +3,5 @@ pyairtable==2.2.0
 pandas==2.2.3
 python-dotenv==1.0.0
 google-generativeai==0.4.0
+groq>=0.4.0
 gunicorn==21.2.0
