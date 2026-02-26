@@ -84,6 +84,70 @@
                             <div id="profit-c{{ cnum }}" style="min-height: 320px;"></div>
                         </div>
                     </div>
+                    <!-- Growth % Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200">
+                                        <th
+                                            class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Fellow Name</th>
+                                        <th
+                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Sales Growth %</th>
+                                        <th
+                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Profit Growth %</th>
+                                        <th
+                                            class="px-6 py-4 text-center font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Red Flags</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    {% for g in cd.get('growth_table', []) %}
+                                    <tr
+                                        class="hover:bg-slate-50/50 transition {% if g.red_flags %}bg-red-50/30{% endif %}">
+                                        <td class="px-6 py-4 font-semibold text-slate-900">{{ g.name }}</td>
+                                        <td class="px-6 py-4 text-right font-mono font-semibold
+                                            {% if g.sales_growth == 'Insufficient Data' %}text-slate-400
+                                            {% elif g.sales_growth is number and g.sales_growth < 0 %}text-injiniRed
+                                            {% else %}text-injiniGreen{% endif %}">
+                                            {% if g.sales_growth == 'Insufficient Data' %}N/A{% else %}{{ g.sales_growth
+                                            }}%{% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 text-right font-mono font-semibold
+                                            {% if g.profit_growth == 'Insufficient Data' %}text-slate-400
+                                            {% elif g.profit_growth is number and g.profit_growth < 0 %}text-injiniRed
+                                            {% else %}text-injiniGreen{% endif %}">
+                                            {% if g.profit_growth == 'Insufficient Data' %}N/A{% else %}{{
+                                            g.profit_growth }}%{% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            {% if g.red_flags %}
+                                            <div class="flex flex-wrap gap-1 justify-center">
+                                                {% for flag in g.red_flags %}
+                                                <span
+                                                    class="text-[10px] font-bold px-2 py-1 bg-red-100 text-injiniRed rounded-full">{{
+                                                    flag }}</span>
+                                                {% endfor %}
+                                            </div>
+                                            {% else %}
+                                            <span class="text-[10px] text-slate-300">—</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if not cd.get('growth_table') %}
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No growth
+                                            data available</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ── JOBS ── -->
@@ -616,16 +680,34 @@
                 grid: { borderColor: '#f1f5f9' },
             });
 
-            // Sales line chart (per fellow)
+            // Sales line chart (per fellow + cohort aggregate)
             if (d.fellows_sales && d.fellows_sales.length) {
                 const series = d.fellows_sales.map(f => ({ name: f.name, data: f.data }));
-                new ApexCharts(document.querySelector('#sales-c' + cnum), lineOpts('sales', series, 'Sales')).render();
+                // Add cohort aggregate total line
+                if (d.cohort_aggregate && d.cohort_aggregate.months.length) {
+                    series.push({
+                        name: 'Cohort Total',
+                        data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: d.cohort_aggregate.sales[i] }))
+                    });
+                }
+                const opts = lineOpts('sales', series, 'Sales');
+                // Make cohort total line dashed and thicker
+                opts.stroke = { width: series.map((_, i) => i === series.length - 1 ? 3.5 : 2), curve: 'smooth', dashArray: series.map((_, i) => i === series.length - 1 ? 5 : 0) };
+                new ApexCharts(document.querySelector('#sales-c' + cnum), opts).render();
             }
 
-            // Profit line chart (per fellow)
+            // Profit line chart (per fellow + cohort aggregate)
             if (d.fellows_profit && d.fellows_profit.length) {
                 const series = d.fellows_profit.map(f => ({ name: f.name, data: f.data }));
-                new ApexCharts(document.querySelector('#profit-c' + cnum), lineOpts('profit', series, 'Profit')).render();
+                if (d.cohort_aggregate && d.cohort_aggregate.months.length) {
+                    series.push({
+                        name: 'Cohort Total',
+                        data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: d.cohort_aggregate.profit[i] }))
+                    });
+                }
+                const opts = lineOpts('profit', series, 'Profit');
+                opts.stroke = { width: series.map((_, i) => i === series.length - 1 ? 3.5 : 2), curve: 'smooth', dashArray: series.map((_, i) => i === series.length - 1 ? 5 : 0) };
+                new ApexCharts(document.querySelector('#profit-c' + cnum), opts).render();
             }
 
             // Jobs clustered bar chart

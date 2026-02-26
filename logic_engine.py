@@ -508,9 +508,43 @@ def calculate_kpis(df):
                     'disability': int(float(latest.get('Disability Students', 0))),
                 })
 
+        # 7. Per-fellow growth % table (with red flags)
+        growth_table = []
+        for biz_name, biz_group in cohort_df.groupby('Business Name'):
+            biz_sorted = biz_group.sort_values('Date')
+            sg = _tiered_sales_growth(biz_sorted['Monthly Sales (R)'])
+            pg = _tiered_profit_growth(biz_sorted['Monthly Net Profit'])
+            flags = []
+            if isinstance(sg, (int, float)) and sg < 0:
+                flags.append('Negative Sales Growth')
+            if isinstance(pg, (int, float)) and pg < 0:
+                flags.append('Negative Profit Growth')
+            growth_table.append({
+                'name': biz_name,
+                'sales_growth': sg,
+                'profit_growth': pg,
+                'red_flags': flags,
+            })
+
+        # 8. Cohort aggregate time series (sum of all fellows per month)
+        if not valid.empty:
+            cohort_agg = valid.groupby(valid['Date'].dt.strftime('%Y-%m')).agg({
+                'Monthly Sales (R)': 'sum',
+                'Monthly Net Profit': 'sum',
+            }).sort_index()
+            cohort_aggregate = {
+                'months': cohort_agg.index.tolist(),
+                'sales': [round(float(v)) for v in cohort_agg['Monthly Sales (R)'].tolist()],
+                'profit': [round(float(v)) for v in cohort_agg['Monthly Net Profit'].tolist()],
+            }
+        else:
+            cohort_aggregate = {'months': [], 'sales': [], 'profit': []}
+
         cohort_detail[cohort_name] = {
             'fellows_sales': fellows_sales,
             'fellows_profit': fellows_profit,
+            'cohort_aggregate': cohort_aggregate,
+            'growth_table': growth_table,
             'jobs_bar': jobs_bar,
             'jobs_table': jobs_table,
             'investments_table': investments_table,
