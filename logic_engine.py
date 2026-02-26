@@ -273,6 +273,8 @@ def calculate_kpis(df):
         cohort_sales = float(cohort_group['Monthly Sales (R)'].sum())
         cohort_profit = float(cohort_group['Monthly Net Profit'].sum())
         cohort_jobs = float(cohort_group.groupby('Business Name').last()['Total Jobs'].sum())
+        cohort_baseline_jobs = float(cohort_group.groupby('Business Name').first()['Total Jobs'].sum())
+        cohort_jobs_pct = round(((cohort_jobs - cohort_baseline_jobs) / cohort_baseline_jobs) * 100, 1) if cohort_baseline_jobs != 0 else 0.0
 
         # Learners = subscribers (students + teachers) latest per venture
         cohort_learners_df = cohort_group.groupby('Business Name').last()
@@ -310,6 +312,7 @@ def calculate_kpis(df):
             'Total Sales': cohort_sales,
             'Total Profit': cohort_profit,
             'Total Jobs': cohort_jobs,
+            'Jobs Pct Change': cohort_jobs_pct,
             'Total Learners': cohort_learners,
             'Median Sales Growth': cohort_median_sg,
             'Median Profit Growth': cohort_median_pg,
@@ -339,9 +342,16 @@ def calculate_kpis(df):
         })
 
     # ─── Jobs Summary (program level) ───
+    # Program-level baseline jobs = sum of first jobs across all ventures
+    prog_baseline_jobs = sum(
+        float(grp.sort_values('Date').iloc[0]['Total Jobs'])
+        for (_, _), grp in businesses
+    )
+    prog_jobs_pct = round(((prog_total_jobs - prog_baseline_jobs) / prog_baseline_jobs) * 100, 1) if prog_baseline_jobs != 0 else 0.0
     jobs_summary = {
         'Total Jobs': int(prog_total_jobs),
         'New Jobs': int(prog_new_jobs),
+        'Jobs Pct Change': prog_jobs_pct,
         'Female Jobs': int(prog_female_jobs),
         'Youth Jobs': int(prog_youth_jobs),
         'New Female Jobs': int(prog_female_new),
