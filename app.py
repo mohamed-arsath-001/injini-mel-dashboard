@@ -115,8 +115,9 @@ def dashboard():
         Venture_Data=kpi_data['Venture_Data']
     )
 
-    # Serialize time-series for JS charts
+    # Serialize time-series and cohort detail for JS charts
     time_series_json = json.dumps(kpi_data['Time_Series'], default=str)
+    cohort_detail_json = json.dumps(kpi_data['Cohort_Detail'], default=str)
 
     return render_template(
         'dashboard.html',
@@ -127,6 +128,8 @@ def dashboard():
         reach_summary=kpi_data['Reach_Summary'],
         time_series_json=time_series_json,
         red_flags=kpi_data['Red_Flags'],
+        cohort_detail=kpi_data['Cohort_Detail'],
+        cohort_detail_json=cohort_detail_json,
     )
 
 

@@ -395,6 +395,129 @@ def calculate_kpis(df):
             'jobs': prog_monthly['jobs'].tolist(),
         }
 
+    # ── Cohort Detail for tabbed dashboard ──
+    cohort_detail = {}
+    for cohort_name in sorted(df['Cohort'].unique()):
+        cohort_df = df[df['Cohort'] == cohort_name].copy()
+        valid = cohort_df[cohort_df['Date'] != datetime.min]
+
+        # 1. Per-fellow sales & profit time series (for line charts)
+        fellows_sales = []
+        fellows_profit = []
+        for biz_name, biz_group in valid.groupby('Business Name'):
+            biz_sorted = biz_group.sort_values('Date')
+            months = biz_sorted['Date'].dt.strftime('%Y-%m').tolist()
+            sales = [round(float(v)) for v in biz_sorted['Monthly Sales (R)'].tolist()]
+            profit = [round(float(v)) for v in biz_sorted['Monthly Net Profit'].tolist()]
+            fellows_sales.append({
+                'name': biz_name,
+                'data': [{'x': m, 'y': s} for m, s in zip(months, sales)]
+            })
+            fellows_profit.append({
+                'name': biz_name,
+                'data': [{'x': m, 'y': p} for m, p in zip(months, profit)]
+            })
+
+        # 2. Jobs clustered bar chart data (aggregated by month)
+        if not valid.empty:
+            jobs_month = valid.groupby(valid['Date'].dt.strftime('%Y-%m')).agg({
+                'Total Jobs': 'sum',
+                'Female Jobs': 'sum',
+                'Youth Jobs': 'sum',
+            }).sort_index()
+            jobs_bar = {
+                'months': jobs_month.index.tolist(),
+                'total': [round(float(v)) for v in jobs_month['Total Jobs'].tolist()],
+                'female': [round(float(v)) for v in jobs_month['Female Jobs'].tolist()],
+                'youth': [round(float(v)) for v in jobs_month['Youth Jobs'].tolist()],
+            }
+        else:
+            jobs_bar = {'months': [], 'total': [], 'female': [], 'youth': []}
+
+        # 3. Jobs table (per fellow — latest snapshot)
+        jobs_table = []
+        for biz_name, biz_group in cohort_df.groupby('Business Name'):
+            biz_sorted = biz_group.sort_values('Date')
+            n = len(biz_sorted)
+            ct = float(biz_sorted.iloc[-1]['Total Jobs']) if n > 0 else 0
+            ft = float(biz_sorted.iloc[0]['Total Jobs']) if n > 0 else 0
+            new_j = int(ct - ft) if n >= 2 else 0
+            cf = float(biz_sorted.iloc[-1]['Female Jobs']) if n > 0 else 0
+            ff = float(biz_sorted.iloc[0]['Female Jobs']) if n > 0 else 0
+            new_f = int(cf - ff) if n >= 2 else 0
+            cy = float(biz_sorted.iloc[-1]['Youth Jobs']) if n > 0 else 0
+            if n >= 2:
+                pt = float(biz_sorted.iloc[-2]['Total Jobs'])
+                pct = round(((ct - pt) / pt) * 100, 1) if pt != 0 else 0.0
+            else:
+                pct = 0.0
+            jobs_table.append({
+                'name': biz_name, 'total': int(ct), 'new': new_j,
+                'pct_change': pct, 'new_female': new_f, 'youth': int(cy),
+            })
+
+        # 4. Investments table (each non-zero grant row)
+        investments_table = []
+        for _, row in cohort_df.iterrows():
+            gv = float(row.get('Grants Value', 0))
+            if gv > 0:
+                investments_table.append({
+                    'name': row['Business Name'],
+                    'value': gv,
+                    'investor': str(row.get('Grant Funder', '') or 'Not specified'),
+                    'month': str(row.get('Reporting Month', '')),
+                })
+
+        # 5. Reach time series (subscribers + schools, aggregated by month)
+        if not valid.empty:
+            reach_month = valid.groupby(valid['Date'].dt.strftime('%Y-%m')).agg({
+                'Total Subscribers Students': 'sum',
+                'Total Subscribers Teachers': 'sum',
+                'New Subscribers Students': 'sum',
+                'New Subscribers Teachers': 'sum',
+                'SA Schools': 'sum',
+                'Q1-3 Schools': 'sum',
+            }).sort_index()
+            cum_learners = reach_month['New Subscribers Students'].cumsum().tolist()
+            cum_educators = reach_month['New Subscribers Teachers'].cumsum().tolist()
+            reach = {
+                'months': reach_month.index.tolist(),
+                'total_learners': [round(float(v)) for v in reach_month['Total Subscribers Students'].tolist()],
+                'total_educators': [round(float(v)) for v in reach_month['Total Subscribers Teachers'].tolist()],
+                'new_learners_cum': [round(float(v)) for v in cum_learners],
+                'new_educators_cum': [round(float(v)) for v in cum_educators],
+                'sa_schools': [round(float(v)) for v in reach_month['SA Schools'].tolist()],
+                'q13_schools': [round(float(v)) for v in reach_month['Q1-3 Schools'].tolist()],
+            }
+        else:
+            reach = {'months': [], 'total_learners': [], 'total_educators': [],
+                     'new_learners_cum': [], 'new_educators_cum': [],
+                     'sa_schools': [], 'q13_schools': []}
+
+        # 6. Learner disaggregation table (per fellow — latest values)
+        disagg_table = []
+        for biz_name, biz_group in cohort_df.groupby('Business Name'):
+            biz_sorted = biz_group.sort_values('Date')
+            n = len(biz_sorted)
+            if n > 0:
+                latest = biz_sorted.iloc[-1]
+                disagg_table.append({
+                    'name': biz_name,
+                    'female': int(float(latest.get('Female Students', 0))),
+                    'rural': int(float(latest.get('Rural Students', 0))),
+                    'disability': int(float(latest.get('Disability Students', 0))),
+                })
+
+        cohort_detail[cohort_name] = {
+            'fellows_sales': fellows_sales,
+            'fellows_profit': fellows_profit,
+            'jobs_bar': jobs_bar,
+            'jobs_table': jobs_table,
+            'investments_table': investments_table,
+            'reach': reach,
+            'disaggregation': disagg_table,
+        }
+
     result = {
         'Program_Overview': {
             'Total_Sales_ZAR': grand_total_sales,
@@ -413,6 +536,7 @@ def calculate_kpis(df):
             'program': program_time_series,
         },
         'Red_Flags': red_flags,
+        'Cohort_Detail': cohort_detail,
     }
 
     return result

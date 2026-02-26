@@ -102,12 +102,15 @@ def fetch_dashboard_data():
                 ]) or 0
 
                 # --- Reach: Schools ---
-                total_schools = get_field([
-                    'Total number of schools solution being tested in',
+                q13_schools = get_field([
                     'Subscription- Q1-3 Schools Students',
                     'Subscription - Q1-3 schools'
                 ]) or 0
                 sa_schools = get_field(['Subscription - South African schools']) or 0
+                total_schools = get_field([
+                    'Total number of schools solution being tested in',
+                    'Total subscribers (Schools/learning institutions)'
+                ]) or (q13_schools + sa_schools)
 
                 # --- Investments ---
                 grants_value = get_field([
@@ -150,6 +153,7 @@ def fetch_dashboard_data():
                     # Schools
                     'Total Schools': total_schools,
                     'SA Schools': sa_schools,
+                    'Q1-3 Schools': q13_schools,
                     # Investments
                     'Grants Value': grants_value,
                     'Grant Funder': grant_funder,
@@ -170,7 +174,7 @@ def fetch_dashboard_data():
         'Female Students', 'Female Teachers',
         'Rural Students', 'Rural Teachers',
         'Disability Students', 'Disability Teachers',
-        'Total Schools', 'SA Schools',
+        'Total Schools', 'SA Schools', 'Q1-3 Schools',
         'Grants Value'
     ]
     for col in numeric_cols:
