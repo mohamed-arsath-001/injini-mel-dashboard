@@ -48,11 +48,41 @@ def fetch_dashboard_data():
                 net_profit = get_field(['Monthly net profit', 'Monthly Net Profit']) or 0
 
                 # --- Jobs ---
-                total_jobs = get_field(['Operational jobs - Total', 'Total operational jobs', 'Total Jobs']) or 0
-                female_jobs = get_field(['Operational jobs - female', 'Female operational jobs']) or 0
-                youth_jobs = get_field(['Youth operational jobs']) or 0
-                educ_jobs_total = get_field(['Educational resourcing jobs -Total', 'Total Educational resourcing jobs']) or 0
-                educ_jobs_female = get_field(['Educational resourcing jobs - Female', 'Female educational resourcing Jobs']) or 0
+                total_jobs = get_field([
+                    'Operational jobs - Total', 'Operational Jobs - Total',
+                    'Total operational jobs', 'Total Operational Jobs',
+                    'Total Jobs', 'Total jobs',
+                    'Operational jobs -Total', 'Operational Jobs -Total',
+                    'Total Operational jobs',
+                ]) or 0
+                female_jobs = get_field([
+                    'Operational jobs - female', 'Operational jobs - Female',
+                    'Operational Jobs - Female',
+                    'Female operational jobs', 'Female Operational Jobs',
+                    'Female Jobs', 'Female jobs',
+                ]) or 0
+                youth_jobs = get_field([
+                    'Youth operational jobs', 'Youth Operational Jobs',
+                    'Youth operational Jobs', 'Youth Jobs', 'Youth jobs',
+                ]) or 0
+                educ_jobs_total = get_field([
+                    'Educational resourcing jobs -Total',
+                    'Educational resourcing jobs - Total',
+                    'Total Educational resourcing jobs',
+                    'Total Educational Resourcing Jobs',
+                ]) or 0
+                educ_jobs_female = get_field([
+                    'Educational resourcing jobs - Female',
+                    'Educational Resourcing Jobs - Female',
+                    'Female educational resourcing Jobs',
+                    'Female Educational Resourcing Jobs',
+                ]) or 0
+
+                # Log if jobs are all zero (field name mismatch?)
+                if total_jobs == 0 and female_jobs == 0 and youth_jobs == 0:
+                    job_keys = [k for k in fields if 'job' in k.lower() or 'operat' in k.lower()]
+                    if job_keys:
+                        print(f"  ⚠ Jobs=0 for {business_name} but found fields: {job_keys}")
 
                 # --- Reach: Subscribers ---
                 total_subscribers_students = get_field([
