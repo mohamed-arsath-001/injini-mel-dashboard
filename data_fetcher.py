@@ -31,10 +31,12 @@ def fetch_dashboard_data():
                 fields = record['fields']
                 
                 # Helper: find field value from multiple possible names
+                # Strip whitespace from Airtable keys to handle trailing spaces
+                stripped_fields = {k.strip(): v for k, v in fields.items()}
                 def get_field(field_list):
                     for name in field_list:
-                        if name in fields:
-                            return fields[name]
+                        if name.strip() in stripped_fields:
+                            return stripped_fields[name.strip()]
                     return None
 
                 # --- Business Identity ---

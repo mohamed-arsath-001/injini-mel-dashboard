@@ -25,13 +25,87 @@
             }
         }
     </script>
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .animate-card {
+            animation: fadeInUp 0.45s ease-out both;
+        }
+
+        .animate-card:nth-child(1) {
+            animation-delay: 0.04s;
+        }
+
+        .animate-card:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .animate-card:nth-child(3) {
+            animation-delay: 0.16s;
+        }
+
+        .animate-card:nth-child(4) {
+            animation-delay: 0.22s;
+        }
+
+        .animate-card:nth-child(5) {
+            animation-delay: 0.28s;
+        }
+
+        .animate-card:nth-child(6) {
+            animation-delay: 0.34s;
+        }
+
+        .hover-lift {
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 28, 148, 0.10);
+        }
+
+        .animate-section {
+            animation: fadeIn 0.5s ease-out both;
+        }
+
+        /* Smooth tab transitions */
+        .tab-panel {
+            animation: fadeInUp 0.35s ease-out both;
+        }
+
+        /* Sidebar active glow */
+        .sidebar-link.active {
+            box-shadow: inset 3px 0 0 #ffd100;
+        }
+    </style>
 </head>
 
 <body class="bg-slate-50 font-sans text-slate-800">
     <div class="flex h-screen overflow-hidden">
 
         <!-- SIDEBAR -->
-        <aside class="w-64 bg-injiniBlue text-white flex flex-col shadow-xl z-10">
+        <aside class="w-64 flex-shrink-0 bg-injiniBlue text-white flex flex-col shadow-xl z-10">
             <div class="p-6 pb-4">
                 <img src="/static/logo.svg" alt="Injini Logo" class="h-10">
             </div>
@@ -50,7 +124,7 @@
         </aside>
 
         <!-- MAIN -->
-        <main class="flex-1 overflow-y-auto p-8">
+        <main class="flex-1 min-w-0 overflow-y-auto p-5">
 
             <!-- ====== COHORT TABS (1–4) ====== -->
             {% for cohort_key in ['Cohort 1', 'Cohort 2', 'Cohort 3', 'Cohort 4'] %}
@@ -59,13 +133,13 @@
             <div id="tab-{{ cohort_key }}" class="tab-panel" {% if not loop.first %}style="display:none" {% endif %}>
 
                 <!-- Header -->
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold text-slate-900">{{ cohort_key }}</h2>
-                    <p class="text-slate-500 mt-1">Performance dashboard for {{ cohort_key }} fellows</p>
+                <div class="mb-4">
+                    <h2 class="text-2xl font-bold text-slate-900">{{ cohort_key }}</h2>
+                    <p class="text-slate-500 mt-0.5 text-sm">Performance dashboard for {{ cohort_key }} fellows</p>
                 </div>
 
                 <!-- ── BUSINESS HEALTH ── -->
-                <div class="mb-10">
+                <div class="mb-6 animate-section">
                     <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                         <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -74,7 +148,7 @@
                         Business Health
                     </h3>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
                             <div class="flex justify-between items-start mb-4">
                                 <div>
                                     <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales
@@ -92,7 +166,7 @@
                             </div>
                             <div id="sales-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                         </div>
-                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
                             <div class="flex justify-between items-start mb-4">
                                 <div>
                                     <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Profit
@@ -544,13 +618,13 @@
 
     <!-- ====== OVERALL TAB ====== -->
     <div id="tab-Overall" class="tab-panel" style="display:none">
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold text-slate-900">Program Overview</h2>
-            <p class="text-slate-500 mt-1">Cross-cohort comparison — live data from Airtable CRM</p>
+        <div class="mb-4">
+            <h2 class="text-2xl font-bold text-slate-900">Program Overview</h2>
+            <p class="text-slate-500 mt-0.5 text-sm">Cross-cohort comparison — live data from Airtable CRM</p>
         </div>
 
         <!-- ── BUSINESS OVERVIEW ── -->
-        <div class="mb-10">
+        <div class="mb-6 animate-section">
             <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                 <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -561,9 +635,9 @@
 
             <!-- Program KPI Cards -->
             {% set ov = kpis.Program_Overview %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div
-                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
                     <div>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sales (YTD)</p>
                         <h4 class="text-2xl font-bold text-slate-800" id="overall-sales-val">R {{
@@ -571,14 +645,14 @@
                     </div>
                 </div>
                 <div
-                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
                     <div>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Net Jobs Created</p>
                         <h4 class="text-2xl font-bold text-slate-800">{{ ov.Net_Jobs_Created }}</h4>
                     </div>
                 </div>
                 <div
-                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
                     <div>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Sales Growth
                         </p>
@@ -587,7 +661,7 @@
                     </div>
                 </div>
                 <div
-                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
                     <div>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Profit Growth
                         </p>
@@ -598,9 +672,9 @@
             </div>
 
             <!-- Sales & Profit Graphs -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                 <!-- Sales Graph -->
-                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
                     <div class="flex justify-between items-start mb-2">
                         <div>
                             <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales Over Time

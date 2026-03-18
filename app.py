@@ -2,6 +2,7 @@ import os
 import io
 import csv
 import json
+import time
 from flask import Flask, render_template, Response, request, jsonify
 from dotenv import load_dotenv
 from groq import Groq
@@ -96,12 +97,26 @@ class DotDict(dict):
         except KeyError:
             raise AttributeError(key)
 
+# ── Data cache (5-minute TTL) ──
+_cache = {'data': None, 'ts': 0}
+CACHE_TTL = 300  # seconds
+
 
 def get_dashboard_data():
-    """Shared helper to fetch and calculate all dashboard data."""
-    raw_df = fetch_dashboard_data()
-    kpi_data = calculate_kpis(raw_df)
-    return raw_df, kpi_data
+    """Shared helper — returns cached data if less than 5 min old."""
+    now = time.time()
+    if _cache['data'] is None or (now - _cache['ts']) > CACHE_TTL:
+        raw_df = fetch_dashboard_data()
+        kpi_data = calculate_kpis(raw_df)
+        _cache['data'] = (raw_df, kpi_data)
+        _cache['ts'] = now
+    return _cache['data']
+
+
+@app.route('/health')
+def health():
+    """Lightweight health-check endpoint for Render (no data fetch)."""
+    return 'ok', 200
 
 
 @app.route('/')
