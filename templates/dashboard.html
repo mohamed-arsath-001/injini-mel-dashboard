@@ -1121,9 +1121,65 @@
                         // Actually logic engine doesn't export per fellow monthly jobs in cohort detail!
                     }
                 }
-            } else if (type === 'subs' || type === 'newsubs' || type === 'schools') {
-                // For now, filtering users/schools per fellow is requested, but logic_engine only exports `fellows_sales` and `fellows_profit`.
-                // We need to either skip it or let the user know we need to update logic_engine!
+            } else if (type === 'subs') {
+                if (filterVal === 'total' && d.reach && d.reach.months.length) {
+                    const tl = d.reach.total_learners;
+                    const te = d.reach.total_educators;
+                    const cl = d.reach.community_learners;
+                    const ce = d.reach.community_educators;
+                    series = [
+                        { name: 'Total Learners', data: tl },
+                        { name: 'Total Educators', data: te },
+                        { name: 'Community Learners', data: cl },
+                        { name: 'Community Educators', data: ce },
+                    ];
+                    val = ((tl.at(-1) || 0) + (te.at(-1) || 0)).toLocaleString();
+                } else if (d.fellows_reach) {
+                    const f = d.fellows_reach.find(x => x.name === filterVal);
+                    if (f) {
+                        series = [
+                            { name: 'Total Learners', data: f.total_learners },
+                            { name: 'Total Educators', data: f.total_educators },
+                            { name: 'Community Learners', data: f.community_learners },
+                            { name: 'Community Educators', data: f.community_educators },
+                        ];
+                        val = ((f.total_learners.at(-1) || 0) + (f.total_educators.at(-1) || 0)).toLocaleString();
+                    }
+                }
+            } else if (type === 'newsubs') {
+                if (filterVal === 'total' && d.reach && d.reach.months.length) {
+                    series = [
+                        { name: 'New Learners (Cumulative)', data: d.reach.new_learners_cum },
+                        { name: 'New Educators (Cumulative)', data: d.reach.new_educators_cum },
+                    ];
+                    val = ((d.reach.new_learners_cum.at(-1) || 0) + (d.reach.new_educators_cum.at(-1) || 0)).toLocaleString();
+                } else if (d.fellows_reach) {
+                    const f = d.fellows_reach.find(x => x.name === filterVal);
+                    if (f) {
+                        series = [
+                            { name: 'New Learners (Cumulative)', data: f.new_learners_cum },
+                            { name: 'New Educators (Cumulative)', data: f.new_educators_cum },
+                        ];
+                        val = ((f.new_learners_cum.at(-1) || 0) + (f.new_educators_cum.at(-1) || 0)).toLocaleString();
+                    }
+                }
+            } else if (type === 'schools') {
+                if (filterVal === 'total' && d.reach && d.reach.months.length) {
+                    series = [
+                        { name: 'SA Schools', data: d.reach.sa_schools },
+                        { name: 'Q1-3 Schools', data: d.reach.q13_schools },
+                    ];
+                    val = ((d.reach.sa_schools.at(-1) || 0) + (d.reach.q13_schools.at(-1) || 0)).toLocaleString();
+                } else if (d.fellows_reach) {
+                    const f = d.fellows_reach.find(x => x.name === filterVal);
+                    if (f) {
+                        series = [
+                            { name: 'SA Schools', data: f.sa_schools },
+                            { name: 'Q1-3 Schools', data: f.q13_schools },
+                        ];
+                        val = ((f.sa_schools.at(-1) || 0) + (f.q13_schools.at(-1) || 0)).toLocaleString();
+                    }
+                }
             }
             return { series, val };
         }
@@ -1250,15 +1306,32 @@
         // ─── DYNAMIC CHART UPDATE ───
         function updateChart(type, cnum, filterVal) {
             const cohortKey = 'Cohort ' + cnum;
-            if (type === 'sales' || type === 'profit') {
-                const updated = getChartSeriesAndVal(type, cohortKey, filterVal);
-                updateMetricDOM(type + '-val-c' + cnum, updated.val);
-                if (renderedCharts[cohortKey + '-' + type]) {
-                    renderedCharts[cohortKey + '-' + type].updateSeries(updated.series);
+            const d = cohortData[cohortKey];
+            if (!d) return;
+
+            const updated = getChartSeriesAndVal(type, cohortKey, filterVal);
+            updateMetricDOM(type + '-val-c' + cnum, updated.val);
+
+            const chartKey = cohortKey + '-' + type;
+            if (renderedCharts[chartKey] && updated.series.length) {
+                // For reach charts, update xaxis categories when switching fellows
+                if ((type === 'subs' || type === 'newsubs' || type === 'schools') && filterVal !== 'total' && d.fellows_reach) {
+                    const f = d.fellows_reach.find(x => x.name === filterVal);
+                    if (f) {
+                        renderedCharts[chartKey].updateOptions({
+                            xaxis: { categories: f.months },
+                            series: updated.series,
+                        });
+                        return;
+                    }
+                } else if ((type === 'subs' || type === 'newsubs' || type === 'schools') && filterVal === 'total' && d.reach) {
+                    renderedCharts[chartKey].updateOptions({
+                        xaxis: { categories: d.reach.months },
+                        series: updated.series,
+                    });
+                    return;
                 }
-            } else {
-                // To implement filtering for jobs/reach we need per-fellow monthly data exported from logic_engine
-                console.warn("Filtering for", type, "not fully implemented pending backend support");
+                renderedCharts[chartKey].updateSeries(updated.series);
             }
         }
 

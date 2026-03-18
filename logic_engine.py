@@ -565,6 +565,33 @@ def calculate_kpis(df):
                      'new_learners_cum': [], 'new_educators_cum': [],
                      'sa_schools': [], 'q13_schools': [], 'community_learners': [], 'community_educators': []}
 
+        # 5b. Per-fellow reach time series (for dropdown filtering)
+        fellows_reach = []
+        if not valid.empty:
+            for biz_name, biz_group in resampled.groupby('Business Name'):
+                biz_sorted = biz_group.sort_index()
+                months = biz_sorted.index.strftime('%Y-%m').tolist()
+                tl = [round(float(v)) for v in biz_sorted['Total Subscribers Students'].tolist()]
+                te = [round(float(v)) for v in biz_sorted['Total Subscribers Teachers'].tolist()]
+                nl_cum = [round(float(v)) for v in biz_sorted['New Subscribers Students'].cumsum().tolist()]
+                ne_cum = [round(float(v)) for v in biz_sorted['New Subscribers Teachers'].cumsum().tolist()]
+                sa = [round(float(v)) for v in biz_sorted['SA Schools'].tolist()]
+                q13 = [round(float(v)) for v in biz_sorted['Q1-3 Schools'].tolist()]
+                cl = [round(float(v)) for v in biz_sorted['Community Learners'].tolist()]
+                ce = [round(float(v)) for v in biz_sorted['Community Educators'].tolist()]
+                fellows_reach.append({
+                    'name': biz_name,
+                    'months': months,
+                    'total_learners': tl,
+                    'total_educators': te,
+                    'new_learners_cum': nl_cum,
+                    'new_educators_cum': ne_cum,
+                    'sa_schools': sa,
+                    'q13_schools': q13,
+                    'community_learners': cl,
+                    'community_educators': ce,
+                })
+
         # 6. Learner disaggregation table (per fellow — latest values)
         disagg_table = []
         for biz_name, biz_group in cohort_df.groupby('Business Name'):
@@ -647,6 +674,7 @@ def calculate_kpis(df):
         cohort_detail[cohort_name] = {
             'fellows_sales': fellows_sales,
             'fellows_profit': fellows_profit,
+            'fellows_reach': fellows_reach,
             'cohort_aggregate': cohort_aggregate,
             'growth_table': growth_table,
             'jobs_bar': jobs_bar,
