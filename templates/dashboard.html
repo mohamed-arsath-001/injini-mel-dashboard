@@ -74,14 +74,41 @@
                         Business Health
                     </h3>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Sales Growth</h4>
-                            <div id="sales-c{{ cnum }}" style="min-height: 320px;"></div>
+                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales
+                                        Growth</h4>
+                                    <h2 class="text-2xl font-bold text-slate-800" id="sales-val-c{{ cnum }}">...</h2>
+                                </div>
+                                <select id="sales-filter-c{{ cnum }}"
+                                    onchange="updateChart('sales', {{ cnum }}, this.value)"
+                                    class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                    <option value="total">Cohort Total</option>
+                                    {% for f in cd.get('fellows_sales', []) %}
+                                    <option value="{{ f.name }}">{{ f.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div id="sales-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                         </div>
-                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Profit Growth
-                            </h4>
-                            <div id="profit-c{{ cnum }}" style="min-height: 320px;"></div>
+                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Profit
+                                        Growth</h4>
+                                    <h2 class="text-2xl font-bold text-slate-800" id="profit-val-c{{ cnum }}">...</h2>
+                                </div>
+                                <select id="profit-filter-c{{ cnum }}"
+                                    onchange="updateChart('profit', {{ cnum }}, this.value)"
+                                    class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                    <option value="total">Cohort Total</option>
+                                    {% for f in cd.get('fellows_profit', []) %}
+                                    <option value="{{ f.name }}">{{ f.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div id="profit-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                         </div>
                     </div>
                     <!-- Growth % Table -->
@@ -101,13 +128,12 @@
                                             Profit Growth %</th>
                                         <th
                                             class="px-6 py-4 text-center font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Red Flags</th>
+                                            Flags</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     {% for g in cd.get('growth_table', []) %}
-                                    <tr
-                                        class="hover:bg-slate-50/50 transition {% if g.red_flags %}bg-red-50/30{% endif %}">
+                                    <tr class="hover:bg-slate-50/50 transition">
                                         <td class="px-6 py-4 font-semibold text-slate-900">{{ g.name }}</td>
                                         <td class="px-6 py-4 text-right font-mono font-semibold
                                             {% if g.sales_growth == 'Insufficient Data' %}text-slate-400
@@ -123,18 +149,24 @@
                                             {% if g.profit_growth == 'Insufficient Data' %}N/A{% else %}{{
                                             g.profit_growth }}%{% endif %}
                                         </td>
-                                        <td class="px-6 py-4 text-center">
-                                            {% if g.red_flags %}
-                                            <div class="flex flex-wrap gap-1 justify-center">
-                                                {% for flag in g.red_flags %}
+                                        <td class="px-6 py-4">
+                                            <div class="flex flex-wrap gap-2 justify-center">
+                                                {% for flag in g.flags %}
+                                                {% if '⚠️' in flag %}
                                                 <span
-                                                    class="text-[10px] font-bold px-2 py-1 bg-red-100 text-injiniRed rounded-full">{{
-                                                    flag }}</span>
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-100 shadow-sm">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{{ flag }}
+                                                </span>
+                                                {% else %}
+                                                <span
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-100 shadow-sm">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>{{ flag
+                                                    }}
+                                                </span>
+                                                {% endif %}
                                                 {% endfor %}
+                                                {% if not g.flags %}<span class="text-slate-300">—</span>{% endif %}
                                             </div>
-                                            {% else %}
-                                            <span class="text-[10px] text-slate-300">—</span>
-                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -160,8 +192,22 @@
                         </svg>
                         Jobs
                     </h3>
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm mb-6">
-                        <div id="jobs-c{{ cnum }}" style="min-height: 320px;"></div>
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm mb-6 flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Jobs
+                                </h4>
+                                <h2 class="text-2xl font-bold text-slate-800" id="jobs-val-c{{ cnum }}">...</h2>
+                            </div>
+                            <select id="jobs-filter-c{{ cnum }}" onchange="updateChart('jobs', {{ cnum }}, this.value)"
+                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                <option value="total">Cohort Total</option>
+                                {% for f in cd.get('jobs_table', []) %}
+                                <option value="{{ f.name }}">{{ f.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="jobs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                         <div class="overflow-x-auto">
@@ -299,387 +345,591 @@
                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
                             </path>
                         </svg>
-                        Solutions Reached
+                        Users Reached
                     </h3>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Total Subscribers
-                            </h4>
-                            <p class="text-xs text-slate-400 mb-3">Learners &amp; Educators by month</p>
-                            <div id="subs-c{{ cnum }}" style="min-height: 300px;"></div>
+                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total
+                                        Subscribers</h4>
+                                    <h2 class="text-2xl font-bold text-slate-800" id="subs-val-c{{ cnum }}">...</h2>
+                                    <p class="text-xs text-slate-400 mt-1">Learners &amp; Educators by month</p>
+                                </div>
+                                <select id="subs-filter-c{{ cnum }}"
+                                    onchange="updateChart('subs', {{ cnum }}, this.value)"
+                                    class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                    <option value="total">Cohort Total</option>
+                                    {% for f in cd.get('users_table', []) %}
+                                    <option value="{{ f.name }}">{{ f.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div id="subs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                         </div>
-                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">New Subscribers
-                                (Cumulative)</h4>
-                            <p class="text-xs text-slate-400 mb-3">Cumulative month-on-month</p>
-                            <div id="newsubs-c{{ cnum }}" style="min-height: 300px;"></div>
+                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">New
+                                        Subscribers</h4>
+                                    <h2 class="text-2xl font-bold text-slate-800" id="newsubs-val-c{{ cnum }}">...</h2>
+                                    <p class="text-xs text-slate-400 mt-1">Cumulative month-on-month</p>
+                                </div>
+                                <select id="newsubs-filter-c{{ cnum }}"
+                                    onchange="updateChart('newsubs', {{ cnum }}, this.value)"
+                                    class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                    <option value="total">Cohort Total</option>
+                                    {% for f in cd.get('users_table', []) %}
+                                    <option value="{{ f.name }}">{{ f.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div id="newsubs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                         </div>
                     </div>
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
-                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Total Schools &amp;
-                            Learning Institutions</h4>
-                        <div id="schools-c{{ cnum }}" style="min-height: 300px;"></div>
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Schools
+                                    &amp; Learning Institutions</h4>
+                                <h2 class="text-2xl font-bold text-slate-800" id="schools-val-c{{ cnum }}">...</h2>
+                            </div>
+                            <select id="schools-filter-c{{ cnum }}"
+                                onchange="updateChart('schools', {{ cnum }}, this.value)"
+                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                <option value="total">Cohort Total</option>
+                                {% for f in cd.get('users_table', []) %}
+                                <option value="{{ f.name }}">{{ f.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="schools-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                     </div>
                 </div>
 
-                <!-- ── LEARNER DISAGGREGATION ── -->
-                <div class="mb-10">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
-                        Learner Disaggregation
-                    </h3>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                        <!-- Collapsible toggle bar -->
-                        <button
-                            onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.disagg-arrow').classList.toggle('rotate-180')"
-                            class="w-full flex items-center justify-between px-6 py-4 bg-slate-50 hover:bg-slate-100 transition cursor-pointer border-b border-slate-200">
-                            <span class="text-sm font-semibold text-slate-600">
-                                {{ cd.get('disaggregation', [])|length }} fellow{{ 's' if cd.get('disaggregation',
-                                [])|length != 1 }} — Click to view disaggregation details
-                            </span>
-                            <svg class="disagg-arrow w-5 h-5 text-slate-400 transition-transform duration-200"
-                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <!-- Table (hidden by default) -->
-                        <div class="hidden">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
-                                    <thead>
-                                        <tr class="bg-slate-50 border-b border-slate-200">
-                                            <th
-                                                class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                                Fellow Name</th>
-                                            <th
-                                                class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                                Female</th>
-                                            <th
-                                                class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                                Rural</th>
-                                            <th
-                                                class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                                Learner with Disability</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        {% for d in cd.get('disaggregation', []) %}
-                                        <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="px-6 py-4 font-semibold text-slate-900">{{ d.name }}</td>
-                                            <td class="px-6 py-4 text-right font-mono font-semibold text-pink-600">{{
-                                                "{:,}".format(d.female) }}</td>
-                                            <td class="px-6 py-4 text-right font-mono font-semibold text-amber-600">{{
-                                                "{:,}".format(d.rural) }}</td>
-                                            <td class="px-6 py-4 text-right font-mono font-semibold text-violet-600">{{
-                                                "{:,}".format(d.disability) }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                        {% if not cd.get('disaggregation') %}
-                                        <tr>
-                                            <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No
-                                                disaggregation data available</td>
-                                        </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-            {% endfor %}
-
-            <!-- ====== OVERALL TAB ====== -->
-            <div id="tab-Overall" class="tab-panel" style="display:none">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold text-slate-900">Program Overview</h2>
-                    <p class="text-slate-500 mt-1">Cross-cohort comparison — live data from Airtable CRM</p>
-                </div>
-
-                <!-- Program KPI Cards -->
-                {% set ov = kpis.Program_Overview %}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-                    <div
-                        class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sales (YTD)
-                            </p>
-                            <h4 class="text-2xl font-bold text-slate-800">R {{ "{:,.0f}".format(ov.Total_Sales_ZAR) }}
-                            </h4>
-                        </div>
-                        <div class="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center text-injiniBlue">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                                </path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div
-                        class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Net Jobs Created
-                            </p>
-                            <h4 class="text-2xl font-bold text-slate-800">{{ ov.Net_Jobs_Created }}</h4>
-                        </div>
-                        <div
-                            class="w-11 h-11 rounded-full bg-green-50 flex items-center justify-center text-injiniGreen">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
-                                </path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div
-                        class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Sales
-                                Growth</p>
-                            {% set sg = ov['Average_Sales_Growth_%'] %}
-                            <h4 class="text-2xl font-bold text-slate-800">{% if sg == "Insufficient Data" %}N/A{% else
-                                %}{{ sg }}%{% endif %}</h4>
-                        </div>
-                        <div
-                            class="w-11 h-11 rounded-full bg-yellow-50 flex items-center justify-center text-injiniGold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div
-                        class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Profit
-                                Growth</p>
-                            {% set pg = ov['Average_Profit_Growth_%'] %}
-                            <h4 class="text-2xl font-bold text-slate-800">{% if pg == "Insufficient Data" %}N/A{% else
-                                %}{{ pg }}%{% endif %}</h4>
-                        </div>
-                        <div
-                            class="w-11 h-11 rounded-full bg-emerald-50 flex items-center justify-center text-injiniGreen">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                                </path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Cohort Comparison Charts -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
-                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Sales Over Time (All
-                            Cohorts)</h4>
-                        <div id="overall-sales-chart" style="min-height: 320px;"></div>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
-                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Profit Over Time (All
-                            Cohorts)</h4>
-                        <div id="overall-profit-chart" style="min-height: 320px;"></div>
-                    </div>
-                </div>
-
-                <!-- Cohort Summary Cards -->
-                <h3 class="text-lg font-bold text-slate-800 mb-4">Cohort Comparison</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                    {% for c in cohort_summaries %}
-                    {% set c_sales = c['Total Sales'] %}
-                    {% set c_profit = c['Total Profit'] %}
-                    {% set c_jobs = c['Total Jobs'] %}
-                    {% set c_learners = c['Total Learners'] %}
-                    {% set c_msg = c['Median Sales Growth'] %}
-                    {% set c_mpg = c['Median Profit Growth'] %}
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
-                        <div class="flex items-center justify-between mb-5">
-                            <h4 class="font-bold text-slate-900 text-lg">{{ c['Cohort'] }}</h4>
-                            <span
-                                class="text-xs font-bold px-3 py-1 bg-injiniBlue/10 text-injiniBlue rounded-full uppercase">{{
-                                c['Ventures'] }} Ventures</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="bg-slate-50 rounded-lg p-3">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Total Sales</p>
-                                <p class="text-lg font-bold text-slate-800">R {{ "{:,.0f}".format(c_sales) }}</p>
-                            </div>
-                            <div class="bg-slate-50 rounded-lg p-3">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Total Profit</p>
-                                <p
-                                    class="text-lg font-bold {% if c_profit >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
-                                    R {{ "{:,.0f}".format(c_profit) }}</p>
-                            </div>
-                            <div class="bg-slate-50 rounded-lg p-3">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Total Jobs</p>
-                                <p class="text-lg font-bold text-slate-800">{{ "{:,.0f}".format(c_jobs) }}</p>
-                            </div>
-                            <div class="bg-slate-50 rounded-lg p-3">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Jobs % Change</p>
-                                {% set c_jpct = c['Jobs Pct Change'] %}
-                                <p
-                                    class="text-lg font-bold {% if c_jpct >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
-                                    {{ c_jpct }}%</p>
-                            </div>
-                            <div class="bg-slate-50 rounded-lg p-3">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Subscribers</p>
-                                <p class="text-lg font-bold text-injiniBlue">{{ "{:,.0f}".format(c_learners) }}</p>
-                            </div>
-                            <div class="bg-slate-50 rounded-lg p-3">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Median Sales Growth
-                                </p>
-                                {% if c_msg == "Insufficient Data" %}
-                                <p class="text-lg font-bold text-slate-400">N/A</p>
-                                {% elif c_msg is number and c_msg < 0 %} <p class="text-lg font-bold text-injiniRed">{{
-                                    c_msg }}%</p>
-                                    {% else %}
-                                    <p class="text-lg font-bold text-injiniGreen">{{ c_msg }}%</p>
-                                    {% endif %}
-                            </div>
-                            <div class="bg-slate-50 rounded-lg p-3">
-                                <p class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Median Profit Growth
-                                </p>
-                                {% if c_mpg == "Insufficient Data" %}
-                                <p class="text-lg font-bold text-slate-400">N/A</p>
-                                {% elif c_mpg is number and c_mpg < 0 %} <p class="text-lg font-bold text-injiniRed">{{
-                                    c_mpg }}%</p>
-                                    {% else %}
-                                    <p class="text-lg font-bold text-injiniGreen">{{ c_mpg }}%</p>
-                                    {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-
-                <!-- Jobs Summary -->
-                {% set js = jobs_summary %}
-                <h3 class="text-lg font-bold text-slate-800 mb-4">Program Jobs Summary</h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Jobs</p>
-                        <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(js['Total Jobs']) }}</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Jobs</p>
-                        <p
-                            class="text-2xl font-bold {% if js['New Jobs'] >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
-                            {{ "{:+,}".format(js['New Jobs']) }}</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">% Change</p>
-                        <p
-                            class="text-2xl font-bold {% if js['Jobs Pct Change'] >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
-                            {{ js['Jobs Pct Change'] }}%</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Female Jobs</p>
-                        <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(js['Female Jobs']) }}</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Youth Jobs</p>
-                        <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(js['Youth Jobs']) }}</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Female</p>
-                        <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Female Jobs']) }}
-                        </p>
-                    </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Youth</p>
-                        <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Youth Jobs']) }}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Reach Summary -->
-                {% set rs = reach_summary %}
-                <h3 class="text-lg font-bold text-slate-800 mb-4">Program Reach</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
-                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Subscribers</p>
-                        <p class="text-3xl font-bold text-slate-800 mt-1">{{ "{:,}".format(rs['Total Subscribers']) }}
-                        </p>
-                    </div>
-                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Subscribers</p>
-                        <p class="text-3xl font-bold text-injiniGreen mt-1">{{ "{:,}".format(rs['New Subscribers']) }}
-                        </p>
-                    </div>
-                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Schools</p>
-                        <p class="text-3xl font-bold text-injiniBlue mt-1">{{ "{:,}".format(rs['Total Schools']) }}</p>
+                <!-- Users Table (Per Fellow) -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Fellow Name</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Total Learners</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Total Educators</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        New Learners</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        New Educators</th>
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Flags</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for u in cd.get('users_table', []) %}
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="px-6 py-4 font-semibold text-slate-900">{{ u.name }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{
+                                        "{:,}".format(u.tot_learners) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-green-600">{{
+                                        "{:,}".format(u.tot_educators) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                        "{:,}".format(u.new_learners) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                        "{:,}".format(u.new_educators) }}</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for flag in u.flags %}
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-100 shadow-sm">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{{ flag }}
+                                            </span>
+                                            {% endfor %}
+                                            {% if not u.flags %}-{% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not cd.get('users_table') %}
+                                <tr>
+                                    <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No user data
+                                        available for this cohort</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- AI CHAT FLOATING BUTTON -->
-            <div class="fixed bottom-8 right-8 z-50">
-                <button id="injini-ai-btn"
-                    class="bg-white text-injiniBlue p-0 rounded-full shadow-2xl hover:scale-105 transition-transform duration-200 border-2 border-injiniGold w-16 h-16 flex items-center justify-center group overflow-hidden">
-                    <img src="/static/logo.svg" alt="Injini AI" class="w-10 h-10 object-contain ml-1 mt-1"
-                        style="filter: brightness(0) saturate(100%) invert(11%) sepia(95%) saturate(6157%) hue-rotate(234deg) brightness(73%) contrast(131%);">
-                    <span class="absolute -top-2 -right-2 w-5 h-5 bg-injiniRed rounded-full animate-ping"></span>
-                </button>
-            </div>
-
-            <!-- AI CHAT MODAL -->
-            <div id="ai-chat-modal"
-                class="fixed bottom-28 right-8 w-96 bg-white rounded-2xl shadow-2xl z-50 border border-slate-100 hidden flex flex-col overflow-hidden transition-all duration-300 transform scale-95 opacity-0 origin-bottom-right"
-                style="height: 500px;">
-                <div
-                    class="bg-gradient-to-r from-injiniBlue to-blue-900 p-4 flex justify-between items-center text-white">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-                            <img src="/static/logo.svg" class="w-5 h-5"
-                                style="filter: brightness(0) saturate(100%) invert(11%) sepia(95%) saturate(6157%) hue-rotate(234deg) brightness(73%) contrast(131%);">
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-sm">Injini AI</h3>
-                            <p class="text-[10px] text-blue-200 flex items-center gap-1"><span
-                                    class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online</p>
-                        </div>
-                    </div>
-                    <button id="close-chat" class="text-white/80 hover:text-white transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"></path>
+            <!-- ── LEARNER DISAGGREGATION ── -->
+            <div class="mb-10">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    Learner Disaggregation
+                </h3>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <!-- Collapsible toggle bar -->
+                    <button
+                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.disagg-arrow').classList.toggle('rotate-180')"
+                        class="w-full flex items-center justify-between px-6 py-4 bg-slate-50 hover:bg-slate-100 transition cursor-pointer border-b border-slate-200">
+                        <span class="text-sm font-semibold text-slate-600">
+                            {{ cd.get('disaggregation', [])|length }} fellow{{ 's' if cd.get('disaggregation',
+                            [])|length != 1 }} — Click to view disaggregation details
+                        </span>
+                        <svg class="disagg-arrow w-5 h-5 text-slate-400 transition-transform duration-200" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
                         </svg>
                     </button>
-                </div>
-                <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 space-y-4 text-sm">
-                    <div class="flex gap-3">
-                        <div
-                            class="w-8 h-8 rounded-full bg-injiniGold/20 flex-shrink-0 flex items-center justify-center text-xs font-bold text-injiniBlue border border-injiniGold">
-                            AI</div>
-                        <div
-                            class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-slate-700 border border-slate-100">
-                            Welcome to Injini AI! I'm here to help you uncover insights and analyze your venture data.
-                            What would you like to explore today? ✨
+                    <!-- Table (hidden by default) -->
+                    <div class="hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200">
+                                        <th
+                                            class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Fellow Name</th>
+                                        <th
+                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Female</th>
+                                        <th
+                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Rural</th>
+                                        <th
+                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Learner with Disability</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    {% for d in cd.get('disaggregation', []) %}
+                                    <tr class="hover:bg-slate-50/50 transition">
+                                        <td class="px-6 py-4 font-semibold text-slate-900">{{ d.name }}</td>
+                                        <td class="px-6 py-4 text-right font-mono font-semibold text-pink-600">{{
+                                            "{:,}".format(d.female) }}</td>
+                                        <td class="px-6 py-4 text-right font-mono font-semibold text-amber-600">{{
+                                            "{:,}".format(d.rural) }}</td>
+                                        <td class="px-6 py-4 text-right font-mono font-semibold text-violet-600">{{
+                                            "{:,}".format(d.disability) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if not cd.get('disaggregation') %}
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No
+                                            disaggregation data available</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-                <div class="p-4 bg-white border-t border-slate-100">
-                    <form id="chat-form" class="relative">
-                        <input type="text" id="chat-input" placeholder="Ask a question about the data..."
-                            class="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-injiniBlue text-sm shadow-inner transition-all">
-                        <button type="submit"
-                            class="absolute right-2 top-2 p-1.5 bg-injiniBlue text-white rounded-lg hover:bg-blue-800 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                            </svg>
-                        </button>
-                    </form>
+            </div>
+
+    </div>
+    {% endfor %}
+
+    <!-- ====== OVERALL TAB ====== -->
+    <div id="tab-Overall" class="tab-panel" style="display:none">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-slate-900">Program Overview</h2>
+            <p class="text-slate-500 mt-1">Cross-cohort comparison — live data from Airtable CRM</p>
+        </div>
+
+        <!-- ── BUSINESS OVERVIEW ── -->
+        <div class="mb-10">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+                Business Overview
+            </h3>
+
+            <!-- Program KPI Cards -->
+            {% set ov = kpis.Program_Overview %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                <div
+                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sales (YTD)</p>
+                        <h4 class="text-2xl font-bold text-slate-800" id="overall-sales-val">R {{
+                            "{:,.0f}".format(ov.Total_Sales_ZAR) }}</h4>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Net Jobs Created</p>
+                        <h4 class="text-2xl font-bold text-slate-800">{{ ov.Net_Jobs_Created }}</h4>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Sales Growth
+                        </p>
+                        <h4 class="text-2xl font-bold text-slate-800">{% if ov['Average_Sales_Growth_%'] ==
+                            "Insufficient Data" %}N/A{% else %}{{ ov['Average_Sales_Growth_%'] }}%{% endif %}</h4>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Profit Growth
+                        </p>
+                        <h4 class="text-2xl font-bold text-slate-800">{% if ov['Average_Profit_Growth_%'] ==
+                            "Insufficient Data" %}N/A{% else %}{{ ov['Average_Profit_Growth_%'] }}%{% endif %}</h4>
+                    </div>
                 </div>
             </div>
 
-        </main>
+            <!-- Sales & Profit Graphs -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Sales Graph -->
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales Over Time
+                            </h4>
+                        </div>
+                        <select onchange="updateOverallChart('sales', this.value)"
+                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            <option value="total">Program Total</option>
+                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                            endfor %}
+                        </select>
+                    </div>
+                    <div id="overall-sales-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                </div>
+                <!-- Profit Graph -->
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Profit Over Time
+                            </h4>
+                        </div>
+                        <select onchange="updateOverallChart('profit', this.value)"
+                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            <option value="total">Program Total</option>
+                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                            endfor %}
+                        </select>
+                    </div>
+                    <div id="overall-profit-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                </div>
+            </div>
+
+            <!-- Cohort Comparison Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th
+                                    class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Cohort</th>
+                                <th
+                                    class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Ventures</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Total Sales</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Total Profit</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Sales Growth</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Profit Growth</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for c in cohort_summaries %}
+                            <tr class="hover:bg-slate-50/50 transition">
+                                <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
+                                <td class="px-6 py-4 font-semibold text-slate-600">{{ c.Ventures }}</td>
+                                <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">R {{
+                                    "{:,.0f}".format(c['Total Sales']) }}</td>
+                                <td
+                                    class="px-6 py-4 text-right font-mono font-semibold {% if c['Total Profit'] >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                    R {{ "{:,.0f}".format(c['Total Profit']) }}</td>
+                                {% set sg = c['Median Sales Growth'] %}
+                                <td
+                                    class="px-6 py-4 text-right font-mono font-semibold {% if sg == 'Insufficient Data' %}text-slate-400{% elif sg >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                    {% if sg == 'Insufficient Data' %}N/A{% else %}{{ sg }}%{% endif %}</td>
+                                {% set pg = c['Median Profit Growth'] %}
+                                <td
+                                    class="px-6 py-4 text-right font-mono font-semibold {% if pg == 'Insufficient Data' %}text-slate-400{% elif pg >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                    {% if pg == 'Insufficient Data' %}N/A{% else %}{{ pg }}%{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── JOBS ── -->
+        <div class="mb-10">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-injiniGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
+                    </path>
+                </svg>
+                Jobs
+            </h3>
+
+            {% set js = jobs_summary %}
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Jobs</p>
+                    {% set tj = js['Total Jobs'] %}
+                    <p class="text-2xl font-bold text-slate-800 mt-1" id="overall-jobs-val">{{ "{:,}".format(tj) }}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Jobs</p>
+                    {% set nj = js['New Jobs'] %}
+                    <p
+                        class="text-2xl font-bold {% if nj >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
+                        {{ "{:+,}".format(nj) }}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">% Change</p>
+                    {% set pc = js['Jobs Pct Change'] %}
+                    <p
+                        class="text-2xl font-bold {% if pc >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
+                        {{ pc }}%</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Female Jobs</p>
+                    {% set fj = js['Female Jobs'] %}
+                    <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(fj) }}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Youth Jobs</p>
+                    {% set yj = js['Youth Jobs'] %}
+                    <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(yj) }}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Female</p>
+                    <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Female Jobs']) }}</p>
+                </div>
+            </div>
+
+            <!-- Jobs Graph -->
+            <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm mb-6 flex flex-col">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Jobs Over Time</h4>
+                    </div>
+                    <select onchange="updateOverallChart('jobs', this.value)"
+                        class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                        <option value="total">Program Total</option>
+                        {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{% endfor
+                        %}
+                    </select>
+                </div>
+                <div id="overall-jobs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+            </div>
+
+            <!-- Jobs Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th
+                                    class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Cohort</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Total Jobs</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    % Change</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for c in cohort_summaries %}
+                            <tr class="hover:bg-slate-50/50 transition">
+                                <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
+                                <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                    "{:,}".format(c['Total Jobs']) }}</td>
+                                <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{ c['Jobs Pct
+                                    Change'] }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── USERS REACHED ── -->
+        <div class="mb-10">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                    </path>
+                </svg>
+                Users Reached
+            </h3>
+
+            {% set rs = reach_summary %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+                <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Subscribers</p>
+                    {% set ts = rs['Total Subscribers'] %}
+                    <p class="text-3xl font-bold text-slate-800 mt-1" id="overall-subs-val">{{ "{:,}".format(ts) }}</p>
+                </div>
+                <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Subscribers</p>
+                    {% set ns = rs['New Subscribers'] %}
+                    <p class="text-3xl font-bold text-injiniGreen mt-1" id="overall-newsubs-val">{{ "{:,}".format(ns) }}
+                    </p>
+                </div>
+                <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Schools</p>
+                    {% set tsh = rs['Total Schools'] %}
+                    <p class="text-3xl font-bold text-injiniBlue mt-1" id="overall-schools-val">{{ "{:,}".format(tsh) }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Reach Graphs -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Total Subscribers Graph -->
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Subscribers
+                            </h4>
+                        </div>
+                        <select onchange="updateOverallChart('subs', this.value)"
+                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            <option value="total">Program Total</option>
+                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                            endfor %}
+                        </select>
+                    </div>
+                    <div id="overall-subs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                </div>
+                <!-- New Subscribers Graph -->
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">New Subscribers
+                            </h4>
+                        </div>
+                        <select onchange="updateOverallChart('newsubs', this.value)"
+                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            <option value="total">Program Total</option>
+                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                            endfor %}
+                        </select>
+                    </div>
+                    <div id="overall-newsubs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Schools & Learning
+                            Institutions</h4>
+                    </div>
+                    <select onchange="updateOverallChart('schools', this.value)"
+                        class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                        <option value="total">Program Total</option>
+                        {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{% endfor
+                        %}
+                    </select>
+                </div>
+                <div id="overall-schools-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI CHAT FLOATING BUTTON -->
+    <div class="fixed bottom-8 right-8 z-50">
+        <button id="injini-ai-btn"
+            class="bg-white text-injiniBlue p-0 rounded-full shadow-2xl hover:scale-105 transition-transform duration-200 border-2 border-injiniGold w-16 h-16 flex items-center justify-center group overflow-hidden">
+            <img src="/static/logo.svg" alt="Injini AI" class="w-10 h-10 object-contain ml-1 mt-1"
+                style="filter: brightness(0) saturate(100%) invert(11%) sepia(95%) saturate(6157%) hue-rotate(234deg) brightness(73%) contrast(131%);">
+            <span class="absolute -top-2 -right-2 w-5 h-5 bg-injiniRed rounded-full animate-ping"></span>
+        </button>
+    </div>
+
+    <!-- AI CHAT MODAL -->
+    <div id="ai-chat-modal"
+        class="fixed bottom-28 right-8 w-96 bg-white rounded-2xl shadow-2xl z-50 border border-slate-100 hidden flex flex-col overflow-hidden transition-all duration-300 transform scale-95 opacity-0 origin-bottom-right"
+        style="height: 500px;">
+        <div class="bg-gradient-to-r from-injiniBlue to-blue-900 p-4 flex justify-between items-center text-white">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                    <img src="/static/logo.svg" class="w-5 h-5"
+                        style="filter: brightness(0) saturate(100%) invert(11%) sepia(95%) saturate(6157%) hue-rotate(234deg) brightness(73%) contrast(131%);">
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm">Injini AI</h3>
+                    <p class="text-[10px] text-blue-200 flex items-center gap-1"><span
+                            class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online</p>
+                </div>
+            </div>
+            <button id="close-chat" class="text-white/80 hover:text-white transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 space-y-4 text-sm">
+            <div class="flex gap-3">
+                <div
+                    class="w-8 h-8 rounded-full bg-injiniGold/20 flex-shrink-0 flex items-center justify-center text-xs font-bold text-injiniBlue border border-injiniGold">
+                    AI</div>
+                <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-slate-700 border border-slate-100">
+                    Welcome to Injini AI! I'm here to help you uncover insights and analyze your venture data.
+                    What would you like to explore today? ✨
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white border-t border-slate-100">
+            <form id="chat-form" class="relative">
+                <input type="text" id="chat-input" placeholder="Ask a question about the data..."
+                    class="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-injiniBlue text-sm shadow-inner transition-all">
+                <button type="submit"
+                    class="absolute right-2 top-2 p-1.5 bg-injiniBlue text-white rounded-lg hover:bg-blue-800 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    </main>
     </div>
 
     <!-- ====== JAVASCRIPT ====== -->
@@ -724,69 +974,106 @@
             }, 50);
         }
 
+        // ─── HELPER TO UPDATE DOM METRICS ───
+        const updateMetricDOM = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+
+        // ─── CHART DATA GENERATORS ───
+        function getChartSeriesAndVal(type, cohortKey, filterVal) {
+            const d = cohortData[cohortKey];
+            let series = [];
+            let val = '0';
+            if (!d) return { series, val };
+
+            if (type === 'sales') {
+                if (filterVal === 'total' && d.cohort_aggregate && d.cohort_aggregate.months.length) {
+                    series.push({ name: 'Cohort Total', data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: d.cohort_aggregate.sales[i] })) });
+                    series.push({ name: 'Sales Trend', data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: linearTrend(d.cohort_aggregate.sales)[i] })) });
+                    val = 'R ' + (d.cohort_aggregate.sales.at(-1) || 0).toLocaleString();
+                } else if (d.fellows_sales) {
+                    const f = d.fellows_sales.find(x => x.name === filterVal);
+                    if (f) {
+                        series.push({ name: f.name, data: f.data });
+                        series.push({ name: 'Trend', data: f.data.map((pt, i) => ({ x: pt.x, y: linearTrend(f.data.map(p => p.y))[i] })) });
+                        val = 'R ' + (f.data.at(-1)?.y || 0).toLocaleString();
+                    }
+                }
+            } else if (type === 'profit') {
+                if (filterVal === 'total' && d.cohort_aggregate && d.cohort_aggregate.months.length) {
+                    series.push({ name: 'Cohort Total', data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: d.cohort_aggregate.profit[i] })) });
+                    series.push({ name: 'Profit Trend', data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: linearTrend(d.cohort_aggregate.profit)[i] })) });
+                    val = 'R ' + (d.cohort_aggregate.profit.at(-1) || 0).toLocaleString();
+                } else if (d.fellows_profit) {
+                    const f = d.fellows_profit.find(x => x.name === filterVal);
+                    if (f) {
+                        series.push({ name: f.name, data: f.data });
+                        series.push({ name: 'Trend', data: f.data.map((pt, i) => ({ x: pt.x, y: linearTrend(f.data.map(p => p.y))[i] })) });
+                        val = 'R ' + (f.data.at(-1)?.y || 0).toLocaleString();
+                    }
+                }
+            } else if (type === 'jobs') {
+                if (filterVal === 'total' && d.jobs_bar && d.jobs_bar.months.length) {
+                    series = [
+                        { name: 'Total Jobs', data: d.jobs_bar.total },
+                        { name: 'Female Jobs', data: d.jobs_bar.female },
+                        { name: 'Youth Jobs', data: d.jobs_bar.youth },
+                    ];
+                    val = (d.jobs_bar.total.at(-1) || 0).toLocaleString();
+                } else if (d.jobs_table) {
+                    const f = d.jobs_table.find(x => x.name === filterVal);
+                    if (f) {
+                        // For a specific fellow, the bar chart logic doesn't have time series jobs payload per fellow in logic_engine currently!
+                        // Wait, logic_engine `fellows_sales`, `fellows_profit` has monthly data. but jobs doesn't have per-fellow monthly array in cohort_detail. 
+                        // I will add fallback handling for fellow jobs.
+                        // Actually logic engine doesn't export per fellow monthly jobs in cohort detail!
+                    }
+                }
+            } else if (type === 'subs' || type === 'newsubs' || type === 'schools') {
+                // For now, filtering users/schools per fellow is requested, but logic_engine only exports `fellows_sales` and `fellows_profit`.
+                // We need to either skip it or let the user know we need to update logic_engine!
+            }
+            return { series, val };
+        }
+
         // ─── COHORT CHART INITIALIZATION ───
         function initCohortCharts(cohortKey, cnum) {
             if (renderedCharts[cohortKey]) return;
             const d = cohortData[cohortKey];
             if (!d) return;
 
-            const lineOpts = (elId, series, title) => ({
-                chart: { type: 'line', height: 310, ...chartDefaults },
-                series: series,
-                stroke: { width: 2.5, curve: 'smooth' },
-                xaxis: { type: 'category', labels: { rotate: -45, style: { fontSize: '10px' } } },
+            const lineOpts = (type, seriesData) => ({
+                chart: { type: 'line', height: 280, ...chartDefaults },
+                series: seriesData,
+                stroke: { width: [3.5, 2], curve: 'smooth', dashArray: [0, 8] },
+                colors: type === 'profit' ? ['#008a40', '#9ca3af'] : ['#001c94', '#9ca3af'],
+                xaxis: { type: 'datetime', labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
                 yaxis: { labels: { formatter: v => 'R ' + (v / 1000).toFixed(0) + 'k' } },
                 tooltip: { y: { formatter: v => 'R ' + v.toLocaleString() } },
                 legend: { position: 'top', fontSize: '11px' },
                 grid: { borderColor: '#f1f5f9' },
             });
 
-            // Sales line chart (per fellow + cohort aggregate + trend)
-            if (d.fellows_sales && d.fellows_sales.length) {
-                const series = d.fellows_sales.map(f => ({ name: f.name, data: f.data }));
-                if (d.cohort_aggregate && d.cohort_aggregate.months.length) {
-                    series.push({
-                        name: 'Cohort Total',
-                        data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: d.cohort_aggregate.sales[i] }))
-                    });
-                    // Trend line based on cohort aggregate
-                    const trend = linearTrend(d.cohort_aggregate.sales);
-                    series.push({
-                        name: 'Sales Trend',
-                        data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: trend[i] }))
-                    });
-                }
-                const opts = lineOpts('sales', series, 'Sales');
-                const n = series.length;
-                opts.stroke = { width: series.map((_, i) => i >= n - 2 ? (i === n - 1 ? 2 : 3.5) : 2), curve: 'smooth', dashArray: series.map((_, i) => i >= n - 2 ? (i === n - 1 ? 8 : 5) : 0) };
-                opts.colors = undefined; // let ApexCharts auto-assign, but make trend grey
-                new ApexCharts(document.querySelector('#sales-c' + cnum), opts).render();
+            // Sales
+            const salesInit = getChartSeriesAndVal('sales', cohortKey, 'total');
+            updateMetricDOM('sales-val-c' + cnum, salesInit.val);
+            if (salesInit.series.length) {
+                renderedCharts[cohortKey + '-sales'] = new ApexCharts(document.querySelector('#sales-c' + cnum), lineOpts('sales', salesInit.series));
+                renderedCharts[cohortKey + '-sales'].render();
             }
 
-            // Profit line chart (per fellow + cohort aggregate + trend)
-            if (d.fellows_profit && d.fellows_profit.length) {
-                const series = d.fellows_profit.map(f => ({ name: f.name, data: f.data }));
-                if (d.cohort_aggregate && d.cohort_aggregate.months.length) {
-                    series.push({
-                        name: 'Cohort Total',
-                        data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: d.cohort_aggregate.profit[i] }))
-                    });
-                    const trend = linearTrend(d.cohort_aggregate.profit);
-                    series.push({
-                        name: 'Profit Trend',
-                        data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: trend[i] }))
-                    });
-                }
-                const opts = lineOpts('profit', series, 'Profit');
-                const n = series.length;
-                opts.stroke = { width: series.map((_, i) => i >= n - 2 ? (i === n - 1 ? 2 : 3.5) : 2), curve: 'smooth', dashArray: series.map((_, i) => i >= n - 2 ? (i === n - 1 ? 8 : 5) : 0) };
-                new ApexCharts(document.querySelector('#profit-c' + cnum), opts).render();
+            // Profit
+            const profitInit = getChartSeriesAndVal('profit', cohortKey, 'total');
+            updateMetricDOM('profit-val-c' + cnum, profitInit.val);
+            if (profitInit.series.length) {
+                renderedCharts[cohortKey + '-profit'] = new ApexCharts(document.querySelector('#profit-c' + cnum), lineOpts('profit', profitInit.series));
+                renderedCharts[cohortKey + '-profit'].render();
             }
 
-            // Jobs clustered bar chart
+            // Jobs
+            const jobsVal = d.jobs_bar?.total?.at(-1) || 0;
+            updateMetricDOM('jobs-val-c' + cnum, jobsVal.toLocaleString());
             if (d.jobs_bar && d.jobs_bar.months.length) {
-                new ApexCharts(document.querySelector('#jobs-c' + cnum), {
-                    chart: { type: 'bar', height: 310, ...chartDefaults },
+                renderedCharts[cohortKey + '-jobs'] = new ApexCharts(document.querySelector('#jobs-c' + cnum), {
+                    chart: { type: 'bar', height: 280, ...chartDefaults },
                     series: [
                         { name: 'Total Jobs', data: d.jobs_bar.total },
                         { name: 'Female Jobs', data: d.jobs_bar.female },
@@ -794,32 +1081,41 @@
                     ],
                     colors: ['#001c94', '#ec4899', '#ffd100'],
                     plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
-                    xaxis: { categories: d.jobs_bar.months, labels: { rotate: -45, style: { fontSize: '10px' } } },
+                    xaxis: { type: 'datetime', categories: d.jobs_bar.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
                     yaxis: { labels: { formatter: v => v.toLocaleString() } },
                     legend: { position: 'top', fontSize: '11px' },
                     grid: { borderColor: '#f1f5f9' },
-                }).render();
+                });
+                renderedCharts[cohortKey + '-jobs'].render();
             }
 
-            // Total Subscribers chart
+            // Reach
             if (d.reach && d.reach.months.length) {
-                new ApexCharts(document.querySelector('#subs-c' + cnum), {
-                    chart: { type: 'line', height: 290, ...chartDefaults },
+                const tl = d.reach.total_learners.at(-1) || 0;
+                const te = d.reach.total_educators.at(-1) || 0;
+                updateMetricDOM('subs-val-c' + cnum, (tl + te).toLocaleString());
+                renderedCharts[cohortKey + '-subs'] = new ApexCharts(document.querySelector('#subs-c' + cnum), {
+                    chart: { type: 'line', height: 280, ...chartDefaults },
                     series: [
                         { name: 'Total Learners', data: d.reach.total_learners },
                         { name: 'Total Educators', data: d.reach.total_educators },
+                        { name: 'Community Learners', data: d.reach.community_learners },
+                        { name: 'Community Educators', data: d.reach.community_educators }
                     ],
-                    colors: ['#001c94', '#008a40'],
+                    colors: ['#001c94', '#008a40', '#ec4899', '#ffd100'],
                     stroke: { width: 2.5, curve: 'smooth' },
-                    xaxis: { categories: d.reach.months, labels: { rotate: -45, style: { fontSize: '10px' } } },
+                    xaxis: { type: 'datetime', categories: d.reach.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
                     yaxis: { labels: { formatter: v => v.toLocaleString() } },
                     legend: { position: 'top', fontSize: '11px' },
                     grid: { borderColor: '#f1f5f9' },
-                }).render();
+                });
+                renderedCharts[cohortKey + '-subs'].render();
 
-                // New Subscribers cumulative chart
-                new ApexCharts(document.querySelector('#newsubs-c' + cnum), {
-                    chart: { type: 'area', height: 290, ...chartDefaults },
+                const nl = d.reach.new_learners_cum.at(-1) || 0;
+                const ne = d.reach.new_educators_cum.at(-1) || 0;
+                updateMetricDOM('newsubs-val-c' + cnum, (nl + ne).toLocaleString());
+                renderedCharts[cohortKey + '-newsubs'] = new ApexCharts(document.querySelector('#newsubs-c' + cnum), {
+                    chart: { type: 'area', height: 280, ...chartDefaults },
                     series: [
                         { name: 'New Learners (Cumulative)', data: d.reach.new_learners_cum },
                         { name: 'New Educators (Cumulative)', data: d.reach.new_educators_cum },
@@ -827,82 +1123,225 @@
                     colors: ['#001c94', '#008a40'],
                     stroke: { width: 2, curve: 'smooth' },
                     fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.1 } },
-                    xaxis: { categories: d.reach.months, labels: { rotate: -45, style: { fontSize: '10px' } } },
+                    xaxis: { type: 'datetime', categories: d.reach.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
                     yaxis: { labels: { formatter: v => v.toLocaleString() } },
                     legend: { position: 'top', fontSize: '11px' },
                     grid: { borderColor: '#f1f5f9' },
-                }).render();
+                });
+                renderedCharts[cohortKey + '-newsubs'].render();
 
-                // Schools chart
-                new ApexCharts(document.querySelector('#schools-c' + cnum), {
-                    chart: { type: 'line', height: 290, ...chartDefaults },
+                const ss = d.reach.sa_schools.at(-1) || 0;
+                const qs = d.reach.q13_schools.at(-1) || 0;
+                updateMetricDOM('schools-val-c' + cnum, (ss + qs).toLocaleString());
+                renderedCharts[cohortKey + '-schools'] = new ApexCharts(document.querySelector('#schools-c' + cnum), {
+                    chart: { type: 'line', height: 280, ...chartDefaults },
                     series: [
-                        { name: 'South African Schools', data: d.reach.sa_schools },
+                        { name: 'SA Schools', data: d.reach.sa_schools },
                         { name: 'Q1-3 Schools', data: d.reach.q13_schools },
                     ],
                     colors: ['#001c94', '#ffd100'],
                     stroke: { width: 2.5, curve: 'smooth' },
                     markers: { size: 4 },
-                    xaxis: { categories: d.reach.months, labels: { rotate: -45, style: { fontSize: '10px' } } },
+                    xaxis: { type: 'datetime', categories: d.reach.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
                     yaxis: { labels: { formatter: v => v.toLocaleString() } },
                     legend: { position: 'top', fontSize: '11px' },
                     grid: { borderColor: '#f1f5f9' },
-                }).render();
+                });
+                renderedCharts[cohortKey + '-schools'].render();
             }
 
             renderedCharts[cohortKey] = true;
         }
 
+        // ─── DYNAMIC CHART UPDATE ───
+        function updateChart(type, cnum, filterVal) {
+            const cohortKey = 'Cohort ' + cnum;
+            if (type === 'sales' || type === 'profit') {
+                const updated = getChartSeriesAndVal(type, cohortKey, filterVal);
+                updateMetricDOM(type + '-val-c' + cnum, updated.val);
+                if (renderedCharts[cohortKey + '-' + type]) {
+                    renderedCharts[cohortKey + '-' + type].updateSeries(updated.series);
+                }
+            } else {
+                // To implement filtering for jobs/reach we need per-fellow monthly data exported from logic_engine
+                console.warn("Filtering for", type, "not fully implemented pending backend support");
+            }
+        }
+
         // ─── OVERALL CHARTS ───
+        function getOverallChartSeriesAndVal(type, filterVal) {
+            let d;
+            let val = '0';
+
+            if (filterVal === 'total') {
+                d = tsData.program_extended;
+            } else {
+                const cdObj = cohortData[filterVal];
+                if (!cdObj) return { series: [], val: '0' };
+                d = {
+                    months: cdObj.cohort_aggregate.months,
+                    sales: cdObj.cohort_aggregate.sales,
+                    profit: cdObj.cohort_aggregate.profit,
+                    jobs_total: cdObj.jobs_bar?.total || [],
+                    jobs_female: cdObj.jobs_bar?.female || [],
+                    jobs_youth: cdObj.jobs_bar?.youth || [],
+                    reach_learners: cdObj.reach?.total_learners || [],
+                    reach_educators: cdObj.reach?.total_educators || [],
+                    reach_new_learners_cum: cdObj.reach?.new_learners_cum || [],
+                    reach_new_educators_cum: cdObj.reach?.new_educators_cum || [],
+                    reach_sa_schools: cdObj.reach?.sa_schools || [],
+                    reach_q13_schools: cdObj.reach?.q13_schools || []
+                };
+            }
+
+            if (!d || !d.months || !d.months.length) return { series: [], val: '0' };
+
+            let series = [];
+            const pts = (dataArr) => d.months.map((m, i) => ({ x: m, y: Math.round(dataArr[i]) }));
+
+            if (type === 'sales') {
+                series.push({ name: filterVal === 'total' ? 'Program Total' : filterVal, data: pts(d.sales) });
+                series.push({ name: 'Trend', data: pts(linearTrend(d.sales)) });
+                val = 'R ' + (d.sales.at(-1) || 0).toLocaleString();
+            } else if (type === 'profit') {
+                series.push({ name: filterVal === 'total' ? 'Program Total' : filterVal, data: pts(d.profit) });
+                series.push({ name: 'Trend', data: pts(linearTrend(d.profit)) });
+                val = 'R ' + (d.profit.at(-1) || 0).toLocaleString();
+            } else if (type === 'jobs') {
+                series.push({ name: 'Total Jobs', data: d.jobs_total });
+                series.push({ name: 'Female Jobs', data: d.jobs_female });
+                series.push({ name: 'Youth Jobs', data: d.jobs_youth });
+                val = (d.jobs_total.at(-1) || 0).toLocaleString();
+            } else if (type === 'subs') {
+                series.push({ name: 'Total Learners', data: d.reach_learners });
+                series.push({ name: 'Total Educators', data: d.reach_educators });
+                val = ((d.reach_learners.at(-1) || 0) + (d.reach_educators.at(-1) || 0)).toLocaleString();
+            } else if (type === 'newsubs') {
+                series.push({ name: 'New Learners (Cum)', data: d.reach_new_learners_cum });
+                series.push({ name: 'New Educators (Cum)', data: d.reach_new_educators_cum });
+                val = ((d.reach_new_learners_cum.at(-1) || 0) + (d.reach_new_educators_cum.at(-1) || 0)).toLocaleString();
+            } else if (type === 'schools') {
+                series.push({ name: 'SA Schools', data: d.reach_sa_schools });
+                series.push({ name: 'Q1-3 Schools', data: d.reach_q13_schools });
+                val = ((d.reach_sa_schools.at(-1) || 0) + (d.reach_q13_schools.at(-1) || 0)).toLocaleString();
+            }
+
+            return { series, val, months: d.months };
+        }
+
+        function updateOverallChart(type, filterVal) {
+            const data = getOverallChartSeriesAndVal(type, filterVal);
+            const domMap = {
+                'sales': 'overall-sales-val',
+                'jobs': 'overall-jobs-val',
+                'subs': 'overall-subs-val',
+                'newsubs': 'overall-newsubs-val',
+                'schools': 'overall-schools-val'
+            };
+            if (domMap[type]) updateMetricDOM(domMap[type], data.val);
+
+            if (renderedCharts['overall-' + type]) {
+                if (['jobs', 'subs', 'newsubs', 'schools'].includes(type)) {
+                    renderedCharts['overall-' + type].updateOptions({ xaxis: { categories: data.months } });
+                }
+                renderedCharts['overall-' + type].updateSeries(data.series);
+            }
+        }
+
         function initOverallCharts() {
             if (renderedCharts['Overall']) return;
 
-            // Sales comparison chart (numbered months)
-            const salesSeries = [];
-            for (const [cohort, data] of Object.entries(tsData.cohort || {})) {
-                salesSeries.push({ name: cohort, data: data.sales.map((v, i) => ({ x: 'Month ' + (i + 1), y: Math.round(v) })) });
-            }
-            if (tsData.program && tsData.program.months.length) {
-                salesSeries.push({ name: 'Program Total', data: tsData.program.sales.map((v, i) => ({ x: 'Month ' + (i + 1), y: Math.round(v) })) });
-                // Program trend line
-                const trend = linearTrend(tsData.program.sales.map(v => Math.round(v)));
-                salesSeries.push({ name: 'Program Trend', data: trend.map((v, i) => ({ x: 'Month ' + (i + 1), y: v })) });
-            }
-            const sn = salesSeries.length;
-            new ApexCharts(document.querySelector('#overall-sales-chart'), {
-                chart: { type: 'line', height: 310, ...chartDefaults },
-                series: salesSeries,
-                colors: Object.values(cohortColors).concat(['#374151', '#9ca3af']),
-                stroke: { width: salesSeries.map((_, i) => i === sn - 1 ? 2 : 2.5), curve: 'smooth', dashArray: salesSeries.map((_, i) => i === sn - 1 ? 8 : 0) },
-                xaxis: { type: 'category', labels: { rotate: -45, style: { fontSize: '10px' } } },
+            const lineOpts = (type, seriesData) => ({
+                chart: { type: 'line', height: 280, ...chartDefaults },
+                series: seriesData,
+                stroke: { width: [3.5, 2], curve: 'smooth', dashArray: [0, 8] },
+                colors: type === 'profit' ? ['#008a40', '#9ca3af'] : ['#001c94', '#9ca3af'],
+                xaxis: { type: 'datetime', labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
                 yaxis: { labels: { formatter: v => 'R ' + (v / 1000).toFixed(0) + 'k' } },
                 tooltip: { y: { formatter: v => 'R ' + v.toLocaleString() } },
                 legend: { position: 'top', fontSize: '11px' },
                 grid: { borderColor: '#f1f5f9' },
-            }).render();
+            });
 
-            // Profit comparison chart (numbered months)
-            const profitSeries = [];
-            for (const [cohort, data] of Object.entries(tsData.cohort || {})) {
-                profitSeries.push({ name: cohort, data: data.profit.map((v, i) => ({ x: 'Month ' + (i + 1), y: Math.round(v) })) });
+            // Sales
+            const sData = getOverallChartSeriesAndVal('sales', 'total');
+            if (sData.series.length) {
+                renderedCharts['overall-sales'] = new ApexCharts(document.querySelector('#overall-sales-chart'), lineOpts('sales', sData.series));
+                renderedCharts['overall-sales'].render();
             }
-            if (tsData.program && tsData.program.months.length) {
-                profitSeries.push({ name: 'Program Total', data: tsData.program.profit.map((v, i) => ({ x: 'Month ' + (i + 1), y: Math.round(v) })) });
-                const trend = linearTrend(tsData.program.profit.map(v => Math.round(v)));
-                profitSeries.push({ name: 'Program Trend', data: trend.map((v, i) => ({ x: 'Month ' + (i + 1), y: v })) });
+
+            // Profit
+            const pData = getOverallChartSeriesAndVal('profit', 'total');
+            if (pData.series.length) {
+                renderedCharts['overall-profit'] = new ApexCharts(document.querySelector('#overall-profit-chart'), lineOpts('profit', pData.series));
+                renderedCharts['overall-profit'].render();
             }
-            const pn = profitSeries.length;
-            new ApexCharts(document.querySelector('#overall-profit-chart'), {
-                chart: { type: 'line', height: 310, ...chartDefaults },
-                series: profitSeries,
-                colors: Object.values(cohortColors).concat(['#374151', '#9ca3af']),
-                stroke: { width: profitSeries.map((_, i) => i === pn - 1 ? 2 : 2.5), curve: 'smooth', dashArray: profitSeries.map((_, i) => i === pn - 1 ? 8 : 0) },
-                xaxis: { type: 'category', labels: { rotate: -45, style: { fontSize: '10px' } } },
-                yaxis: { labels: { formatter: v => 'R ' + (v / 1000).toFixed(0) + 'k' } },
-                tooltip: { y: { formatter: v => 'R ' + v.toLocaleString() } },
-                legend: { position: 'top', fontSize: '11px' },
-                grid: { borderColor: '#f1f5f9' },
-            }).render();
+
+            // Jobs
+            const jData = getOverallChartSeriesAndVal('jobs', 'total');
+            if (jData.series.length) {
+                renderedCharts['overall-jobs'] = new ApexCharts(document.querySelector('#overall-jobs-chart'), {
+                    chart: { type: 'bar', height: 280, ...chartDefaults },
+                    series: jData.series,
+                    colors: ['#001c94', '#ec4899', '#ffd100'],
+                    plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+                    xaxis: { type: 'datetime', categories: jData.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
+                    yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                    legend: { position: 'top', fontSize: '11px' },
+                    grid: { borderColor: '#f1f5f9' },
+                });
+                renderedCharts['overall-jobs'].render();
+            }
+
+            // Reach - Subs
+            const rData = getOverallChartSeriesAndVal('subs', 'total');
+            if (rData.series.length) {
+                renderedCharts['overall-subs'] = new ApexCharts(document.querySelector('#overall-subs-chart'), {
+                    chart: { type: 'line', height: 280, ...chartDefaults },
+                    series: rData.series,
+                    colors: ['#001c94', '#008a40'],
+                    stroke: { width: 2.5, curve: 'smooth' },
+                    xaxis: { type: 'datetime', categories: rData.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
+                    yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                    legend: { position: 'top', fontSize: '11px' },
+                    grid: { borderColor: '#f1f5f9' },
+                });
+                renderedCharts['overall-subs'].render();
+            }
+
+            // Reach - New Subs
+            const nData = getOverallChartSeriesAndVal('newsubs', 'total');
+            if (nData.series.length) {
+                renderedCharts['overall-newsubs'] = new ApexCharts(document.querySelector('#overall-newsubs-chart'), {
+                    chart: { type: 'area', height: 280, ...chartDefaults },
+                    series: nData.series,
+                    colors: ['#001c94', '#008a40'],
+                    stroke: { width: 2, curve: 'smooth' },
+                    fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.1 } },
+                    xaxis: { type: 'datetime', categories: nData.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
+                    yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                    legend: { position: 'top', fontSize: '11px' },
+                    grid: { borderColor: '#f1f5f9' },
+                });
+                renderedCharts['overall-newsubs'].render();
+            }
+
+            // Schools
+            const scData = getOverallChartSeriesAndVal('schools', 'total');
+            if (scData.series.length) {
+                renderedCharts['overall-schools'] = new ApexCharts(document.querySelector('#overall-schools-chart'), {
+                    chart: { type: 'line', height: 280, ...chartDefaults },
+                    series: scData.series,
+                    colors: ['#001c94', '#ffd100'],
+                    stroke: { width: 2.5, curve: 'smooth' },
+                    markers: { size: 4 },
+                    xaxis: { type: 'datetime', categories: scData.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
+                    yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                    legend: { position: 'top', fontSize: '11px' },
+                    grid: { borderColor: '#f1f5f9' },
+                });
+                renderedCharts['overall-schools'].render();
+            }
 
             renderedCharts['Overall'] = true;
         }

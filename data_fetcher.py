@@ -82,7 +82,7 @@ def fetch_dashboard_data():
                 if total_jobs == 0 and female_jobs == 0 and youth_jobs == 0:
                     job_keys = [k for k in fields if 'job' in k.lower() or 'operat' in k.lower()]
                     if job_keys:
-                        print(f"  ⚠ Jobs=0 for {business_name} but found fields: {job_keys}")
+                        print(f"  [!] Jobs=0 for {business_name} but found fields: {job_keys}")
 
                 # --- Reach: Subscribers ---
                 total_subscribers_students = get_field([
@@ -109,6 +109,15 @@ def fetch_dashboard_data():
                 active_teachers = get_field([
                     'Active users teachers - Broad Definition',
                     'Monthly Active users - Teachers'
+                ]) or 0
+                # --- Reach: Community ---
+                community_learners = get_field([
+                    'Total community impact - Learners', 'Total Community Impact - Learners',
+                    'Community learners', 'Community Learners'
+                ]) or 0
+                community_educators = get_field([
+                    'Total community impact - Educators', 'Total Community Impact - Educators',
+                    'Community educators', 'Community Educators'
                 ]) or 0
 
                 # --- Reach: Demographics ---
@@ -170,6 +179,9 @@ def fetch_dashboard_data():
                     'Total Subscribers Teachers': total_subscribers_teachers,
                     'New Subscribers Students': new_subscribers_students,
                     'New Subscribers Teachers': new_subscribers_teachers,
+                    # Community
+                    'Community Learners': community_learners,
+                    'Community Educators': community_educators,
                     # Active Users
                     'Active Students': active_students,
                     'Active Teachers': active_teachers,
@@ -190,8 +202,10 @@ def fetch_dashboard_data():
                     'Income Statement': income_statement,
                 })
         except Exception as e:
-            print(f"Failed to fetch {cohort}. Error: {e}")
-            
+            import traceback
+            with open('data_fetcher_error.log', 'w', encoding='utf-8') as f:
+                traceback.print_exc(file=f)
+            print(f"Failed to fetch {cohort}. Check data_fetcher_error.log")
     df = pd.DataFrame(all_data)
     
     # Numeric columns to clean
@@ -200,6 +214,7 @@ def fetch_dashboard_data():
         'Total Jobs', 'Female Jobs', 'Youth Jobs', 'Educ Jobs Total', 'Educ Jobs Female',
         'Total Subscribers Students', 'Total Subscribers Teachers',
         'New Subscribers Students', 'New Subscribers Teachers',
+        'Community Learners', 'Community Educators',
         'Active Students', 'Active Teachers',
         'Female Students', 'Female Teachers',
         'Rural Students', 'Rural Teachers',

@@ -10,7 +10,7 @@ def parse_reporting_month(month_str):
     Example: 'Report 6 - September 2023' -> datetime(2023, 9, 1)
     """
     if not isinstance(month_str, str) or month_str == 'Unknown':
-        return datetime.min
+        return pd.NaT
 
     match = re.search(r'(\w+)\s+(\d{4})', month_str)
     if match:
@@ -19,7 +19,7 @@ def parse_reporting_month(month_str):
             return datetime.strptime(date_str, '%B %Y')
         except ValueError:
             pass
-    return datetime.min
+    return pd.NaT
 
 
 # ──────────────────────────────────────────────
@@ -106,6 +106,45 @@ def calculate_kpis(df):
     """
     # Create a proper date column for sorting
     df['Date'] = df['Reporting Month'].apply(parse_reporting_month)
+
+    # ─── Program Level Time Series (Aggregating ALL businesses globally) ───
+    program_series = {}
+    valid_global = df[df['Date'].notna()].copy()
+    if not valid_global.empty:
+        valid_idx = valid_global.set_index('Date')
+        stock_cols = ['Total Jobs', 'Female Jobs', 'Youth Jobs',
+                      'Total Subscribers Students', 'Total Subscribers Teachers',
+                      'SA Schools', 'Q1-3 Schools', 'Community Learners', 'Community Educators']
+        flow_cols = ['New Subscribers Students', 'New Subscribers Teachers', 'Monthly Sales (R)', 'Monthly Net Profit']
+        
+        def map_biz_global(g):
+            g = g[~g.index.duplicated(keep='last')].sort_index()
+            res = g.resample('MS').asfreq()
+            res[stock_cols] = res[stock_cols].ffill()
+            for c in flow_cols:
+                if c in res.columns:
+                    res[c] = res[c].fillna(0)
+            return res
+
+        resampled_global = valid_idx.groupby('Business Name', group_keys=False).apply(map_biz_global)
+        prog_monthly = resampled_global.groupby(resampled_global.index.strftime('%Y-%m')).sum().sort_index()
+        
+        program_series = {
+            'months': prog_monthly.index.tolist(),
+            'sales': [round(float(v)) for v in prog_monthly['Monthly Sales (R)'].tolist()],
+            'profit': [round(float(v)) for v in prog_monthly['Monthly Net Profit'].tolist()],
+            'jobs_total': [round(float(v)) for v in prog_monthly['Total Jobs'].tolist()],
+            'jobs_female': [round(float(v)) for v in prog_monthly['Female Jobs'].tolist()],
+            'jobs_youth': [round(float(v)) for v in prog_monthly['Youth Jobs'].tolist()],
+            'reach_learners': [round(float(v)) for v in prog_monthly['Total Subscribers Students'].tolist()],
+            'reach_educators': [round(float(v)) for v in prog_monthly['Total Subscribers Teachers'].tolist()],
+            'reach_new_learners_cum': [round(float(v)) for v in prog_monthly.get('New Subscribers Students', pd.Series(dtype=float)).cumsum().tolist()],
+            'reach_new_educators_cum': [round(float(v)) for v in prog_monthly.get('New Subscribers Teachers', pd.Series(dtype=float)).cumsum().tolist()],
+            'reach_sa_schools': [round(float(v)) for v in prog_monthly['SA Schools'].tolist()],
+            'reach_q13_schools': [round(float(v)) for v in prog_monthly['Q1-3 Schools'].tolist()],
+            'reach_community_learners': [round(float(v)) for v in prog_monthly['Community Learners'].tolist()],
+            'reach_community_educators': [round(float(v)) for v in prog_monthly['Community Educators'].tolist()],
+        }
 
     # Group by Business
     businesses = df.groupby(['Cohort', 'Business Name'])
@@ -212,7 +251,7 @@ def calculate_kpis(df):
         # ── Time-series for this venture ──
         for _, row in group.iterrows():
             ts_date = row['Date']
-            if ts_date != datetime.min:
+            if pd.notna(ts_date):
                 all_time_series.append({
                     'cohort': cohort,
                     'business': business,
@@ -409,7 +448,7 @@ def calculate_kpis(df):
     cohort_detail = {}
     for cohort_name in sorted(df['Cohort'].unique()):
         cohort_df = df[df['Cohort'] == cohort_name].copy()
-        valid = cohort_df[cohort_df['Date'] != datetime.min]
+        valid = cohort_df[cohort_df['Date'].notna()]
 
         # 1. Per-fellow sales & profit time series (for line charts)
         fellows_sales = []
@@ -429,8 +468,26 @@ def calculate_kpis(df):
             })
 
         # 2. Jobs clustered bar chart data (aggregated by month)
+        # 2. Resample and forward-fill per business to prevent dropping out of aggregates
         if not valid.empty:
-            jobs_month = valid.groupby(valid['Date'].dt.strftime('%Y-%m')).agg({
+            valid_idx = valid.set_index('Date')
+            stock_cols = ['Total Jobs', 'Female Jobs', 'Youth Jobs',
+                          'Total Subscribers Students', 'Total Subscribers Teachers',
+                          'SA Schools', 'Q1-3 Schools', 'Community Learners', 'Community Educators']
+            flow_cols = ['New Subscribers Students', 'New Subscribers Teachers']
+
+            def map_biz(g):
+                g = g[~g.index.duplicated(keep='last')].sort_index()
+                # Resample from the biz's min date to max date (or to cohort max date, which ensures they stay in aggregate)
+                # We resample to month start (MS)
+                res = g.resample('MS').asfreq()
+                res[stock_cols] = res[stock_cols].ffill()
+                res[flow_cols] = res[flow_cols].fillna(0)
+                return res
+
+            resampled = valid_idx.groupby('Business Name', group_keys=False).apply(map_biz)
+            
+            jobs_month = resampled.groupby(resampled.index.strftime('%Y-%m')).agg({
                 'Total Jobs': 'sum',
                 'Female Jobs': 'sum',
                 'Youth Jobs': 'sum',
@@ -480,13 +537,15 @@ def calculate_kpis(df):
 
         # 5. Reach time series (subscribers + schools, aggregated by month)
         if not valid.empty:
-            reach_month = valid.groupby(valid['Date'].dt.strftime('%Y-%m')).agg({
+            reach_month = resampled.groupby(resampled.index.strftime('%Y-%m')).agg({
                 'Total Subscribers Students': 'sum',
                 'Total Subscribers Teachers': 'sum',
                 'New Subscribers Students': 'sum',
                 'New Subscribers Teachers': 'sum',
                 'SA Schools': 'sum',
                 'Q1-3 Schools': 'sum',
+                'Community Learners': 'sum',
+                'Community Educators': 'sum',
             }).sort_index()
             cum_learners = reach_month['New Subscribers Students'].cumsum().tolist()
             cum_educators = reach_month['New Subscribers Teachers'].cumsum().tolist()
@@ -498,11 +557,13 @@ def calculate_kpis(df):
                 'new_educators_cum': [round(float(v)) for v in cum_educators],
                 'sa_schools': [round(float(v)) for v in reach_month['SA Schools'].tolist()],
                 'q13_schools': [round(float(v)) for v in reach_month['Q1-3 Schools'].tolist()],
+                'community_learners': [round(float(v)) for v in reach_month['Community Learners'].tolist()],
+                'community_educators': [round(float(v)) for v in reach_month['Community Educators'].tolist()],
             }
         else:
             reach = {'months': [], 'total_learners': [], 'total_educators': [],
                      'new_learners_cum': [], 'new_educators_cum': [],
-                     'sa_schools': [], 'q13_schools': []}
+                     'sa_schools': [], 'q13_schools': [], 'community_learners': [], 'community_educators': []}
 
         # 6. Learner disaggregation table (per fellow — latest values)
         disagg_table = []
@@ -518,22 +579,55 @@ def calculate_kpis(df):
                     'disability': int(float(latest.get('Disability Students', 0))),
                 })
 
-        # 7. Per-fellow growth % table (with red flags)
+        # 7. Users table (per fellow — subscribers + flags)
+        users_table = []
+        for biz_name, biz_group in cohort_df.groupby('Business Name'):
+            biz_sorted = biz_group.sort_values('Date')
+            n_biz = len(biz_sorted)
+            if n_biz > 0:
+                tot_learners = float(biz_sorted['Total Subscribers Students'].iloc[-1])
+                tot_educators = float(biz_sorted['Total Subscribers Teachers'].iloc[-1])
+                new_learners = float(biz_sorted['New Subscribers Students'].sum())
+                new_educators = float(biz_sorted['New Subscribers Teachers'].sum())
+            else:
+                tot_learners = 0.0
+                tot_educators = 0.0
+                new_learners = 0.0
+                new_educators = 0.0
+                
+            biz_flags = []
+            if n_biz > 0:
+                ann_new = ((new_learners + new_educators) / n_biz) * 12
+                if (tot_learners + tot_educators) > 0 and ann_new < 8000:
+                    biz_flags.append('Low Learner Reach (<8,000/yr)')
+                    
+            users_table.append({
+                'name': biz_name,
+                'tot_learners': int(tot_learners),
+                'tot_educators': int(tot_educators),
+                'new_learners': int(new_learners),
+                'new_educators': int(new_educators),
+                'flags': biz_flags
+            })
+
+        # 8. Per-fellow growth % table (with positive/negative flags)
         growth_table = []
         for biz_name, biz_group in cohort_df.groupby('Business Name'):
             biz_sorted = biz_group.sort_values('Date')
             sg = _tiered_sales_growth(biz_sorted['Monthly Sales (R)'])
             pg = _tiered_profit_growth(biz_sorted['Monthly Net Profit'])
             flags = []
-            if isinstance(sg, (int, float)) and sg < 0:
-                flags.append('Negative Sales Growth')
-            if isinstance(pg, (int, float)) and pg < 0:
-                flags.append('Negative Profit Growth')
+            if isinstance(sg, (int, float)):
+                if sg < 0: flags.append('Negative Sales Growth ⚠️')
+                elif sg > 20: flags.append('Strong Sales Growth ✨')
+            if isinstance(pg, (int, float)):
+                if pg < 0: flags.append('Negative Profit Growth ⚠️')
+                elif pg > 20: flags.append('Strong Profit Growth ✨')
             growth_table.append({
                 'name': biz_name,
                 'sales_growth': sg,
                 'profit_growth': pg,
-                'red_flags': flags,
+                'flags': flags,
             })
 
         # 8. Cohort aggregate time series (sum of all fellows per month)
@@ -560,6 +654,7 @@ def calculate_kpis(df):
             'investments_table': investments_table,
             'reach': reach,
             'disaggregation': disagg_table,
+            'users_table': users_table,
         }
 
     result = {
@@ -578,6 +673,7 @@ def calculate_kpis(df):
         'Time_Series': {
             'cohort': cohort_time_series,
             'program': program_time_series,
+            'program_extended': program_series,
         },
         'Red_Flags': red_flags,
         'Cohort_Detail': cohort_detail,
