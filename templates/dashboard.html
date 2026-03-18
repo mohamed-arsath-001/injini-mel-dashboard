@@ -1112,13 +1112,15 @@
                         { name: 'Youth Jobs', data: d.jobs_bar.youth },
                     ];
                     val = (d.jobs_bar.total.at(-1) || 0).toLocaleString();
-                } else if (d.jobs_table) {
-                    const f = d.jobs_table.find(x => x.name === filterVal);
+                } else if (d.fellows_jobs) {
+                    const f = d.fellows_jobs.find(x => x.name === filterVal);
                     if (f) {
-                        // For a specific fellow, the bar chart logic doesn't have time series jobs payload per fellow in logic_engine currently!
-                        // Wait, logic_engine `fellows_sales`, `fellows_profit` has monthly data. but jobs doesn't have per-fellow monthly array in cohort_detail. 
-                        // I will add fallback handling for fellow jobs.
-                        // Actually logic engine doesn't export per fellow monthly jobs in cohort detail!
+                        series = [
+                            { name: 'Total Jobs', data: f.total },
+                            { name: 'Female Jobs', data: f.female },
+                            { name: 'Youth Jobs', data: f.youth },
+                        ];
+                        val = (f.total.at(-1) || 0).toLocaleString();
                     }
                 }
             } else if (type === 'subs') {
@@ -1314,9 +1316,9 @@
 
             const chartKey = cohortKey + '-' + type;
             if (renderedCharts[chartKey] && updated.series.length) {
-                // For reach charts, update xaxis categories when switching fellows
-                if ((type === 'subs' || type === 'newsubs' || type === 'schools') && filterVal !== 'total' && d.fellows_reach) {
-                    const f = d.fellows_reach.find(x => x.name === filterVal);
+                // For reach and jobs charts, update xaxis categories when switching fellows
+                if ((type === 'subs' || type === 'newsubs' || type === 'schools' || type === 'jobs') && filterVal !== 'total') {
+                    const f = (type === 'jobs') ? d.fellows_jobs.find(x => x.name === filterVal) : d.fellows_reach.find(x => x.name === filterVal);
                     if (f) {
                         renderedCharts[chartKey].updateOptions({
                             xaxis: { categories: f.months },
@@ -1324,9 +1326,10 @@
                         });
                         return;
                     }
-                } else if ((type === 'subs' || type === 'newsubs' || type === 'schools') && filterVal === 'total' && d.reach) {
+                } else if ((type === 'subs' || type === 'newsubs' || type === 'schools' || type === 'jobs') && filterVal === 'total') {
+                    const months = (type === 'jobs') ? d.jobs_bar.months : d.reach.months;
                     renderedCharts[chartKey].updateOptions({
-                        xaxis: { categories: d.reach.months },
+                        xaxis: { categories: months },
                         series: updated.series,
                     });
                     return;

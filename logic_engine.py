@@ -501,6 +501,23 @@ def calculate_kpis(df):
         else:
             jobs_bar = {'months': [], 'total': [], 'female': [], 'youth': []}
 
+        # 2b. Per-fellow jobs time series (for dropdown filtering)
+        fellows_jobs = []
+        if not valid.empty:
+            for biz_name, biz_group in resampled.groupby('Business Name'):
+                biz_sorted = biz_group.sort_index()
+                months = biz_sorted.index.strftime('%Y-%m').tolist()
+                total = [round(float(v)) for v in biz_sorted['Total Jobs'].tolist()]
+                female = [round(float(v)) for v in biz_sorted['Female Jobs'].tolist()]
+                youth = [round(float(v)) for v in biz_sorted['Youth Jobs'].tolist()]
+                fellows_jobs.append({
+                    'name': biz_name,
+                    'months': months,
+                    'total': total,
+                    'female': female,
+                    'youth': youth,
+                })
+
         # 3. Jobs table (per fellow — latest snapshot)
         jobs_table = []
         for biz_name, biz_group in cohort_df.groupby('Business Name'):
@@ -678,6 +695,7 @@ def calculate_kpis(df):
             'cohort_aggregate': cohort_aggregate,
             'growth_table': growth_table,
             'jobs_bar': jobs_bar,
+            'fellows_jobs': fellows_jobs,
             'jobs_table': jobs_table,
             'investments_table': investments_table,
             'reach': reach,
