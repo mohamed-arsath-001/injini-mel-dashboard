@@ -103,389 +103,93 @@
 </head>
 
 <body class="bg-slate-50 font-sans text-slate-800">
-    <div class="flex min-h-screen">
 
-        <!-- SIDEBAR -->
-        <aside class="w-64 flex-shrink-0 bg-injiniBlue text-white flex flex-col shadow-xl z-10 sticky top-0 h-screen">
-            <div class="p-4 pb-2 relative" style="height: 120px;">
-                <spline-viewer url="https://prod.spline.design/1e9d1552-3443-485d-a066-e46604b8db02/scene.splinecode"
-                    style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.3;">
-                </spline-viewer>
-                <img src="/static/logo.svg" alt="Injini Logo" class="h-10 relative z-10">
-            </div>
-            <nav class="flex-1 px-4 py-2 space-y-1">
-                {% for tab in ['Cohort 1', 'Cohort 2', 'Cohort 3', 'Cohort 4', 'Overall'] %}
-                <button data-tab="{{ tab }}" onclick="switchTab('{{ tab }}')"
-                    class="sidebar-link w-full text-left block px-4 py-3 rounded-lg text-sm font-medium transition
+    <!-- SIDEBAR (fixed) -->
+    <aside
+        class="fixed top-0 left-0 w-64 h-screen bg-injiniBlue text-white flex flex-col shadow-xl z-20 overflow-hidden">
+        <div class="p-4 pb-2 relative overflow-hidden" style="min-height:64px;">
+            <spline-viewer url="https://prod.spline.design/1e9d1552-3443-485d-a066-e46604b8db02/scene.splinecode"
+                style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.25;">
+            </spline-viewer>
+            <img src="/static/logo.svg" alt="Injini Logo" class="h-10 relative z-10">
+        </div>
+        <nav class="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+            {% for tab in ['Cohort 1', 'Cohort 2', 'Cohort 3', 'Cohort 4', 'Overall'] %}
+            <button data-tab="{{ tab }}" onclick="switchTab('{{ tab }}')"
+                class="sidebar-link w-full text-left block px-4 py-3 rounded-lg text-sm font-medium transition
                     {% if loop.first %}bg-blue-800/50 border-l-4 border-injiniGold text-white{% else %}text-blue-100 hover:bg-blue-800/50{% endif %}">
-                    {{ tab }}
-                </button>
-                {% endfor %}
-            </nav>
-            <div class="p-4 border-t border-blue-800/50">
-                <p class="text-[10px] text-blue-300 uppercase tracking-widest">Powered by Injini MEL</p>
+                {{ tab }}
+            </button>
+            {% endfor %}
+        </nav>
+        <div class="p-4 border-t border-blue-800/50">
+            <p class="text-[10px] text-blue-300 uppercase tracking-widest">Powered by Injini MEL</p>
+        </div>
+    </aside>
+
+    <!-- MAIN (offset by sidebar width) -->
+    <main class="ml-64 min-h-screen p-5">
+
+        <!-- ====== COHORT TABS (1–4) ====== -->
+        {% for cohort_key in ['Cohort 1', 'Cohort 2', 'Cohort 3', 'Cohort 4'] %}
+        {% set cnum = loop.index %}
+        {% set cd = cohort_detail.get(cohort_key, {}) %}
+        <div id="tab-{{ cohort_key }}" class="tab-panel" {% if not loop.first %}style="display:none" {% endif %}>
+
+            <!-- Header -->
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-slate-900">{{ cohort_key }}</h2>
+                <p class="text-slate-500 mt-0.5 text-sm">Performance dashboard for {{ cohort_key }} fellows</p>
             </div>
-        </aside>
 
-        <!-- MAIN -->
-        <main class="flex-1 min-w-0 overflow-y-auto p-5">
-
-            <!-- ====== COHORT TABS (1–4) ====== -->
-            {% for cohort_key in ['Cohort 1', 'Cohort 2', 'Cohort 3', 'Cohort 4'] %}
-            {% set cnum = loop.index %}
-            {% set cd = cohort_detail.get(cohort_key, {}) %}
-            <div id="tab-{{ cohort_key }}" class="tab-panel" {% if not loop.first %}style="display:none" {% endif %}>
-
-                <!-- Header -->
-                <div class="mb-4">
-                    <h2 class="text-2xl font-bold text-slate-900">{{ cohort_key }}</h2>
-                    <p class="text-slate-500 mt-0.5 text-sm">Performance dashboard for {{ cohort_key }} fellows</p>
-                </div>
-
-                <!-- ── BUSINESS HEALTH ── -->
-                <div class="mb-6 animate-section">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                        Business Health
-                    </h3>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales
-                                        Growth</h4>
-                                    <h2 class="text-2xl font-bold text-slate-800" id="sales-val-c{{ cnum }}">...</h2>
-                                </div>
-                                <select id="sales-filter-c{{ cnum }}"
-                                    onchange="updateChart('sales', {{ cnum }}, this.value)"
-                                    class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                                    <option value="total">Cohort Total</option>
-                                    {% for f in cd.get('fellows_sales', []) %}
-                                    <option value="{{ f.name }}">{{ f.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div id="sales-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-                        </div>
-                        <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Profit
-                                        Growth</h4>
-                                    <h2 class="text-2xl font-bold text-slate-800" id="profit-val-c{{ cnum }}">...</h2>
-                                </div>
-                                <select id="profit-filter-c{{ cnum }}"
-                                    onchange="updateChart('profit', {{ cnum }}, this.value)"
-                                    class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                                    <option value="total">Cohort Total</option>
-                                    {% for f in cd.get('fellows_profit', []) %}
-                                    <option value="{{ f.name }}">{{ f.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div id="profit-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-                        </div>
-                    </div>
-                    <!-- Growth % Table -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="bg-slate-50 border-b border-slate-200">
-                                        <th
-                                            class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Fellow Name</th>
-                                        <th
-                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Sales Growth %</th>
-                                        <th
-                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Profit Growth %</th>
-                                        <th
-                                            class="px-6 py-4 text-center font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Flags</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100">
-                                    {% for g in cd.get('growth_table', []) %}
-                                    <tr class="hover:bg-slate-50/50 transition">
-                                        <td class="px-6 py-4 font-semibold text-slate-900">{{ g.name }}</td>
-                                        <td class="px-6 py-4 text-right font-mono font-semibold
-                                            {% if g.sales_growth == 'Insufficient Data' %}text-slate-400
-                                            {% elif g.sales_growth is number and g.sales_growth < 0 %}text-injiniRed
-                                            {% else %}text-injiniGreen{% endif %}">
-                                            {% if g.sales_growth == 'Insufficient Data' %}N/A{% else %}{{ g.sales_growth
-                                            }}%{% endif %}
-                                        </td>
-                                        <td class="px-6 py-4 text-right font-mono font-semibold
-                                            {% if g.profit_growth == 'Insufficient Data' %}text-slate-400
-                                            {% elif g.profit_growth is number and g.profit_growth < 0 %}text-injiniRed
-                                            {% else %}text-injiniGreen{% endif %}">
-                                            {% if g.profit_growth == 'Insufficient Data' %}N/A{% else %}{{
-                                            g.profit_growth }}%{% endif %}
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex flex-wrap gap-2 justify-center">
-                                                {% for flag in g.flags %}
-                                                {% if '⚠️' in flag %}
-                                                <span
-                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-100 shadow-sm">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{{ flag }}
-                                                </span>
-                                                {% else %}
-                                                <span
-                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-100 shadow-sm">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>{{ flag
-                                                    }}
-                                                </span>
-                                                {% endif %}
-                                                {% endfor %}
-                                                {% if not g.flags %}<span class="text-slate-300">—</span>{% endif %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                    {% if not cd.get('growth_table') %}
-                                    <tr>
-                                        <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No growth
-                                            data available</td>
-                                    </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── JOBS ── -->
-                <div class="mb-10">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-injiniGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
-                            </path>
-                        </svg>
-                        Jobs
-                    </h3>
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm mb-6 flex flex-col">
+            <!-- ── BUSINESS HEALTH ── -->
+            <div class="mb-6 animate-section">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    Business Health
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Jobs
-                                </h4>
-                                <h2 class="text-2xl font-bold text-slate-800" id="jobs-val-c{{ cnum }}">...</h2>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales
+                                    Growth</h4>
+                                <h2 class="text-2xl font-bold text-slate-800" id="sales-val-c{{ cnum }}">...</h2>
                             </div>
-                            <select id="jobs-filter-c{{ cnum }}" onchange="updateChart('jobs', {{ cnum }}, this.value)"
+                            <select id="sales-filter-c{{ cnum }}"
+                                onchange="updateChart('sales', {{ cnum }}, this.value)"
                                 class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
                                 <option value="total">Cohort Total</option>
-                                {% for f in cd.get('jobs_table', []) %}
+                                {% for f in cd.get('fellows_sales', []) %}
                                 <option value="{{ f.name }}">{{ f.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div id="jobs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                        <div id="sales-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="bg-slate-50 border-b border-slate-200">
-                                        <th
-                                            class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Fellow Name</th>
-                                        <th
-                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Total Jobs</th>
-                                        <th
-                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            New Jobs Created</th>
-                                        <th
-                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            % Change</th>
-                                        <th
-                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            New Female Jobs</th>
-                                        <th
-                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Youth Jobs</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100">
-                                    {% for j in cd.get('jobs_table', []) %}
-                                    <tr class="hover:bg-slate-50/50 transition">
-                                        <td class="px-6 py-4 font-semibold text-slate-900">{{ j.name }}</td>
-                                        <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
-                                            "{:,}".format(j.total) }}</td>
-                                        <td
-                                            class="px-6 py-4 text-right font-mono font-semibold {% if j.new >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
-                                            {{ "{:+,}".format(j.new) }}</td>
-                                        <td
-                                            class="px-6 py-4 text-right font-mono font-semibold {% if j.pct_change >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
-                                            {{ j.pct_change }}%</td>
-                                        <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{
-                                            "{:+,}".format(j.new_female) }}</td>
-                                        <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
-                                            "{:,}".format(j.youth) }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                    {% if not cd.get('jobs_table') %}
-                                    <tr>
-                                        <td colspan="6" class="px-6 py-8 text-center text-slate-400 italic">No jobs data
-                                            available for this cohort</td>
-                                    </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── INVESTMENTS ── -->
-                <div class="mb-10">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-injiniGold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                            </path>
-                        </svg>
-                        Investments
-                    </h3>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                        <!-- Collapsible toggle bar -->
-                        <button
-                            onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.inv-arrow').classList.toggle('rotate-180')"
-                            class="w-full flex items-center justify-between px-6 py-4 bg-slate-50 hover:bg-slate-100 transition cursor-pointer border-b border-slate-200">
-                            <span class="text-sm font-semibold text-slate-600">
-                                {{ cd.get('investments_table', [])|length }} investment record{{ 's' if
-                                cd.get('investments_table', [])|length != 1 }}
-                                {% set inv_total = cd.get('investments_table', []) | map(attribute='value') | sum %}
-                                — Total: <span class="text-injiniGreen font-mono">R {{ "{:,.0f}".format(inv_total)
-                                    }}</span>
-                            </span>
-                            <svg class="inv-arrow w-5 h-5 text-slate-400 transition-transform duration-200" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <!-- Table (hidden by default) -->
-                        <div class="hidden">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
-                                    <thead>
-                                        <tr class="bg-slate-50 border-b border-slate-200">
-                                            <th
-                                                class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                                Fellow Name</th>
-                                            <th
-                                                class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                                Rand Value</th>
-                                            <th
-                                                class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                                Investor Name</th>
-                                            <th
-                                                class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                                Month</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        {% for inv in cd.get('investments_table', []) %}
-                                        <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="px-6 py-4 font-semibold text-slate-900">{{ inv.name }}</td>
-                                            <td class="px-6 py-4 text-right font-mono font-semibold text-injiniGreen">R
-                                                {{ "{:,.0f}".format(inv.value) }}</td>
-                                            <td class="px-6 py-4 text-slate-700">{{ inv.investor }}</td>
-                                            <td class="px-6 py-4 text-slate-500">{{ inv.month }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                        {% if not cd.get('investments_table') %}
-                                        <tr>
-                                            <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No
-                                                investment data available for this cohort</td>
-                                        </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── SOLUTIONS REACHED ── -->
-                <div class="mb-10">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                            </path>
-                        </svg>
-                        Users Reached
-                    </h3>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total
-                                        Subscribers</h4>
-                                    <h2 class="text-2xl font-bold text-slate-800" id="subs-val-c{{ cnum }}">...</h2>
-                                    <p class="text-xs text-slate-400 mt-1">Learners &amp; Educators by month</p>
-                                </div>
-                                <select id="subs-filter-c{{ cnum }}"
-                                    onchange="updateChart('subs', {{ cnum }}, this.value)"
-                                    class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                                    <option value="total">Cohort Total</option>
-                                    {% for f in cd.get('users_table', []) %}
-                                    <option value="{{ f.name }}">{{ f.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div id="subs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-                        </div>
-                        <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">New
-                                        Subscribers</h4>
-                                    <h2 class="text-2xl font-bold text-slate-800" id="newsubs-val-c{{ cnum }}">...</h2>
-                                    <p class="text-xs text-slate-400 mt-1">Cumulative month-on-month</p>
-                                </div>
-                                <select id="newsubs-filter-c{{ cnum }}"
-                                    onchange="updateChart('newsubs', {{ cnum }}, this.value)"
-                                    class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                                    <option value="total">Cohort Total</option>
-                                    {% for f in cd.get('users_table', []) %}
-                                    <option value="{{ f.name }}">{{ f.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div id="newsubs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Schools
-                                    &amp; Learning Institutions</h4>
-                                <h2 class="text-2xl font-bold text-slate-800" id="schools-val-c{{ cnum }}">...</h2>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Profit
+                                    Growth</h4>
+                                <h2 class="text-2xl font-bold text-slate-800" id="profit-val-c{{ cnum }}">...</h2>
                             </div>
-                            <select id="schools-filter-c{{ cnum }}"
-                                onchange="updateChart('schools', {{ cnum }}, this.value)"
+                            <select id="profit-filter-c{{ cnum }}"
+                                onchange="updateChart('profit', {{ cnum }}, this.value)"
                                 class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
                                 <option value="total">Cohort Total</option>
-                                {% for f in cd.get('users_table', []) %}
+                                {% for f in cd.get('fellows_profit', []) %}
                                 <option value="{{ f.name }}">{{ f.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div id="schools-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                        <div id="profit-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                     </div>
                 </div>
-
-                <!-- Users Table (Per Fellow) -->
+                <!-- Growth % Table -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
@@ -496,49 +200,139 @@
                                         Fellow Name</th>
                                     <th
                                         class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                        Total Learners</th>
+                                        Sales Growth %</th>
                                     <th
                                         class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                        Total Educators</th>
+                                        Profit Growth %</th>
                                     <th
-                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                        New Learners</th>
-                                    <th
-                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                        New Educators</th>
-                                    <th
-                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        class="px-6 py-4 text-center font-bold text-slate-500 uppercase text-xs tracking-wider">
                                         Flags</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
-                                {% for u in cd.get('users_table', []) %}
+                                {% for g in cd.get('growth_table', []) %}
                                 <tr class="hover:bg-slate-50/50 transition">
-                                    <td class="px-6 py-4 font-semibold text-slate-900">{{ u.name }}</td>
-                                    <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{
-                                        "{:,}".format(u.tot_learners) }}</td>
-                                    <td class="px-6 py-4 text-right font-mono font-semibold text-green-600">{{
-                                        "{:,}".format(u.tot_educators) }}</td>
-                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
-                                        "{:,}".format(u.new_learners) }}</td>
-                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
-                                        "{:,}".format(u.new_educators) }}</td>
+                                    <td class="px-6 py-4 font-semibold text-slate-900">{{ g.name }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold
+                                            {% if g.sales_growth == 'Insufficient Data' %}text-slate-400
+                                            {% elif g.sales_growth is number and g.sales_growth < 0 %}text-injiniRed
+                                            {% else %}text-injiniGreen{% endif %}">
+                                        {% if g.sales_growth == 'Insufficient Data' %}N/A{% else %}{{ g.sales_growth
+                                        }}%{% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold
+                                            {% if g.profit_growth == 'Insufficient Data' %}text-slate-400
+                                            {% elif g.profit_growth is number and g.profit_growth < 0 %}text-injiniRed
+                                            {% else %}text-injiniGreen{% endif %}">
+                                        {% if g.profit_growth == 'Insufficient Data' %}N/A{% else %}{{
+                                        g.profit_growth }}%{% endif %}
+                                    </td>
                                     <td class="px-6 py-4">
-                                        <div class="flex flex-wrap gap-2">
-                                            {% for flag in u.flags %}
+                                        <div class="flex flex-wrap gap-2 justify-center">
+                                            {% for flag in g.flags %}
+                                            {% if '⚠️' in flag %}
                                             <span
                                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-100 shadow-sm">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{{ flag }}
                                             </span>
+                                            {% else %}
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-100 shadow-sm">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>{{ flag
+                                                }}
+                                            </span>
+                                            {% endif %}
                                             {% endfor %}
-                                            {% if not u.flags %}-{% endif %}
+                                            {% if not g.flags %}<span class="text-slate-300">—</span>{% endif %}
                                         </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
-                                {% if not cd.get('users_table') %}
+                                {% if not cd.get('growth_table') %}
                                 <tr>
-                                    <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No user data
+                                    <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No growth
+                                        data available</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── JOBS ── -->
+            <div class="mb-10">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-injiniGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
+                        </path>
+                    </svg>
+                    Jobs
+                </h3>
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm mb-6 flex flex-col">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Jobs
+                            </h4>
+                            <h2 class="text-2xl font-bold text-slate-800" id="jobs-val-c{{ cnum }}">...</h2>
+                        </div>
+                        <select id="jobs-filter-c{{ cnum }}" onchange="updateChart('jobs', {{ cnum }}, this.value)"
+                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            <option value="total">Cohort Total</option>
+                            {% for f in cd.get('jobs_table', []) %}
+                            <option value="{{ f.name }}">{{ f.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div id="jobs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Fellow Name</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Total Jobs</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        New Jobs Created</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        % Change</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        New Female Jobs</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Youth Jobs</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for j in cd.get('jobs_table', []) %}
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="px-6 py-4 font-semibold text-slate-900">{{ j.name }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                        "{:,}".format(j.total) }}</td>
+                                    <td
+                                        class="px-6 py-4 text-right font-mono font-semibold {% if j.new >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                        {{ "{:+,}".format(j.new) }}</td>
+                                    <td
+                                        class="px-6 py-4 text-right font-mono font-semibold {% if j.pct_change >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                        {{ j.pct_change }}%</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{
+                                        "{:+,}".format(j.new_female) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                        "{:,}".format(j.youth) }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% if not cd.get('jobs_table') %}
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-slate-400 italic">No jobs data
                                         available for this cohort</td>
                                 </tr>
                                 {% endif %}
@@ -548,25 +342,29 @@
                 </div>
             </div>
 
-            <!-- ── LEARNER DISAGGREGATION ── -->
+            <!-- ── INVESTMENTS ── -->
             <div class="mb-10">
                 <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 text-injiniGold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
                     </svg>
-                    Learner Disaggregation
+                    Investments
                 </h3>
                 <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     <!-- Collapsible toggle bar -->
                     <button
-                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.disagg-arrow').classList.toggle('rotate-180')"
+                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.inv-arrow').classList.toggle('rotate-180')"
                         class="w-full flex items-center justify-between px-6 py-4 bg-slate-50 hover:bg-slate-100 transition cursor-pointer border-b border-slate-200">
                         <span class="text-sm font-semibold text-slate-600">
-                            {{ cd.get('disaggregation', [])|length }} fellow{{ 's' if cd.get('disaggregation',
-                            [])|length != 1 }} — Click to view disaggregation details
+                            {{ cd.get('investments_table', [])|length }} investment record{{ 's' if
+                            cd.get('investments_table', [])|length != 1 }}
+                            {% set inv_total = cd.get('investments_table', []) | map(attribute='value') | sum %}
+                            — Total: <span class="text-injiniGreen font-mono">R {{ "{:,.0f}".format(inv_total)
+                                }}</span>
                         </span>
-                        <svg class="disagg-arrow w-5 h-5 text-slate-400 transition-transform duration-200" fill="none"
+                        <svg class="inv-arrow w-5 h-5 text-slate-400 transition-transform duration-200" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
                             </path>
@@ -583,31 +381,29 @@
                                             Fellow Name</th>
                                         <th
                                             class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Female</th>
+                                            Rand Value</th>
                                         <th
-                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Rural</th>
+                                            class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Investor Name</th>
                                         <th
-                                            class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                            Learner with Disability</th>
+                                            class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                            Month</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
-                                    {% for d in cd.get('disaggregation', []) %}
+                                    {% for inv in cd.get('investments_table', []) %}
                                     <tr class="hover:bg-slate-50/50 transition">
-                                        <td class="px-6 py-4 font-semibold text-slate-900">{{ d.name }}</td>
-                                        <td class="px-6 py-4 text-right font-mono font-semibold text-pink-600">{{
-                                            "{:,}".format(d.female) }}</td>
-                                        <td class="px-6 py-4 text-right font-mono font-semibold text-amber-600">{{
-                                            "{:,}".format(d.rural) }}</td>
-                                        <td class="px-6 py-4 text-right font-mono font-semibold text-violet-600">{{
-                                            "{:,}".format(d.disability) }}</td>
+                                        <td class="px-6 py-4 font-semibold text-slate-900">{{ inv.name }}</td>
+                                        <td class="px-6 py-4 text-right font-mono font-semibold text-injiniGreen">R
+                                            {{ "{:,.0f}".format(inv.value) }}</td>
+                                        <td class="px-6 py-4 text-slate-700">{{ inv.investor }}</td>
+                                        <td class="px-6 py-4 text-slate-500">{{ inv.month }}</td>
                                     </tr>
                                     {% endfor %}
-                                    {% if not cd.get('disaggregation') %}
+                                    {% if not cd.get('investments_table') %}
                                     <tr>
                                         <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No
-                                            disaggregation data available</td>
+                                            investment data available for this cohort</td>
                                     </tr>
                                     {% endif %}
                                 </tbody>
@@ -617,395 +413,617 @@
                 </div>
             </div>
 
-    </div>
-    {% endfor %}
-
-    <!-- ====== OVERALL TAB ====== -->
-    <div id="tab-Overall" class="tab-panel" style="display:none">
-        <div class="mb-4">
-            <h2 class="text-2xl font-bold text-slate-900">Program Overview</h2>
-            <p class="text-slate-500 mt-0.5 text-sm">Cross-cohort comparison — live data from Airtable CRM</p>
-        </div>
-
-        <!-- ── BUSINESS OVERVIEW ── -->
-        <div class="mb-6 animate-section">
-            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                </svg>
-                Business Overview
-            </h3>
-
-            <!-- Program KPI Cards -->
-            {% set ov = kpis.Program_Overview %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div
-                    class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sales (YTD)</p>
-                        <h4 class="text-2xl font-bold text-slate-800" id="overall-sales-val">R {{
-                            "{:,.0f}".format(ov.Total_Sales_ZAR) }}</h4>
-                    </div>
-                </div>
-                <div
-                    class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Net Jobs Created</p>
-                        <h4 class="text-2xl font-bold text-slate-800">{{ ov.Net_Jobs_Created }}</h4>
-                    </div>
-                </div>
-                <div
-                    class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Sales Growth
-                        </p>
-                        <h4 class="text-2xl font-bold text-slate-800">{% if ov['Average_Sales_Growth_%'] ==
-                            "Insufficient Data" %}N/A{% else %}{{ ov['Average_Sales_Growth_%'] }}%{% endif %}</h4>
-                    </div>
-                </div>
-                <div
-                    class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Profit Growth
-                        </p>
-                        <h4 class="text-2xl font-bold text-slate-800">{% if ov['Average_Profit_Growth_%'] ==
-                            "Insufficient Data" %}N/A{% else %}{{ ov['Average_Profit_Growth_%'] }}%{% endif %}</h4>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sales & Profit Graphs -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                <!-- Sales Graph -->
-                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales Over Time
-                            </h4>
-                        </div>
-                        <select onchange="updateOverallChart('sales', this.value)"
-                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                            <option value="total">Program Total</option>
-                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
-                            endfor %}
-                        </select>
-                    </div>
-                    <div id="overall-sales-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-                </div>
-                <!-- Profit Graph -->
-                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Profit Over Time
-                            </h4>
-                        </div>
-                        <select onchange="updateOverallChart('profit', this.value)"
-                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                            <option value="total">Program Total</option>
-                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
-                            endfor %}
-                        </select>
-                    </div>
-                    <div id="overall-profit-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-                </div>
-            </div>
-
-            <!-- Cohort Comparison Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200">
-                                <th
-                                    class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                    Cohort</th>
-                                <th
-                                    class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                    Ventures</th>
-                                <th
-                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                    Total Sales</th>
-                                <th
-                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                    Total Profit</th>
-                                <th
-                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                    Sales Growth</th>
-                                <th
-                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                    Profit Growth</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            {% for c in cohort_summaries %}
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
-                                <td class="px-6 py-4 font-semibold text-slate-600">{{ c.Ventures }}</td>
-                                <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">R {{
-                                    "{:,.0f}".format(c['Total Sales']) }}</td>
-                                <td
-                                    class="px-6 py-4 text-right font-mono font-semibold {% if c['Total Profit'] >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
-                                    R {{ "{:,.0f}".format(c['Total Profit']) }}</td>
-                                {% set sg = c['Median Sales Growth'] %}
-                                <td
-                                    class="px-6 py-4 text-right font-mono font-semibold {% if sg == 'Insufficient Data' %}text-slate-400{% elif sg >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
-                                    {% if sg == 'Insufficient Data' %}N/A{% else %}{{ sg }}%{% endif %}</td>
-                                {% set pg = c['Median Profit Growth'] %}
-                                <td
-                                    class="px-6 py-4 text-right font-mono font-semibold {% if pg == 'Insufficient Data' %}text-slate-400{% elif pg >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
-                                    {% if pg == 'Insufficient Data' %}N/A{% else %}{{ pg }}%{% endif %}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── JOBS ── -->
-        <div class="mb-10">
-            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5 text-injiniGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
-                    </path>
-                </svg>
-                Jobs
-            </h3>
-
-            {% set js = jobs_summary %}
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Jobs</p>
-                    {% set tj = js['Total Jobs'] %}
-                    <p class="text-2xl font-bold text-slate-800 mt-1" id="overall-jobs-val">{{ "{:,}".format(tj) }}</p>
-                </div>
-                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Jobs</p>
-                    {% set nj = js['New Jobs'] %}
-                    <p
-                        class="text-2xl font-bold {% if nj >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
-                        {{ "{:+,}".format(nj) }}</p>
-                </div>
-                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">% Change</p>
-                    {% set pc = js['Jobs Pct Change'] %}
-                    <p
-                        class="text-2xl font-bold {% if pc >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
-                        {{ pc }}%</p>
-                </div>
-                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Female Jobs</p>
-                    {% set fj = js['Female Jobs'] %}
-                    <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(fj) }}</p>
-                </div>
-                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Youth Jobs</p>
-                    {% set yj = js['Youth Jobs'] %}
-                    <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(yj) }}</p>
-                </div>
-                <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Female</p>
-                    <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Female Jobs']) }}</p>
-                </div>
-            </div>
-
-            <!-- Jobs Graph -->
-            <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm mb-6 flex flex-col">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Jobs Over Time</h4>
-                    </div>
-                    <select onchange="updateOverallChart('jobs', this.value)"
-                        class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                        <option value="total">Program Total</option>
-                        {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{% endfor
-                        %}
-                    </select>
-                </div>
-                <div id="overall-jobs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-            </div>
-
-            <!-- Jobs Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200">
-                                <th
-                                    class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                    Cohort</th>
-                                <th
-                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                    Total Jobs</th>
-                                <th
-                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                    % Change</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            {% for c in cohort_summaries %}
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
-                                <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
-                                    "{:,}".format(c['Total Jobs']) }}</td>
-                                <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{ c['Jobs Pct
-                                    Change'] }}%</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── USERS REACHED ── -->
-        <div class="mb-10">
-            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                    </path>
-                </svg>
-                Users Reached
-            </h3>
-
-            {% set rs = reach_summary %}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-                <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Subscribers</p>
-                    {% set ts = rs['Total Subscribers'] %}
-                    <p class="text-3xl font-bold text-slate-800 mt-1" id="overall-subs-val">{{ "{:,}".format(ts) }}</p>
-                </div>
-                <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Subscribers</p>
-                    {% set ns = rs['New Subscribers'] %}
-                    <p class="text-3xl font-bold text-injiniGreen mt-1" id="overall-newsubs-val">{{ "{:,}".format(ns) }}
-                    </p>
-                </div>
-                <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Schools</p>
-                    {% set tsh = rs['Total Schools'] %}
-                    <p class="text-3xl font-bold text-injiniBlue mt-1" id="overall-schools-val">{{ "{:,}".format(tsh) }}
-                    </p>
-                </div>
-            </div>
-
-            <!-- Reach Graphs -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <!-- Total Subscribers Graph -->
-                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Subscribers
-                            </h4>
-                        </div>
-                        <select onchange="updateOverallChart('subs', this.value)"
-                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                            <option value="total">Program Total</option>
-                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
-                            endfor %}
-                        </select>
-                    </div>
-                    <div id="overall-subs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-                </div>
-                <!-- New Subscribers Graph -->
-                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">New Subscribers
-                            </h4>
-                        </div>
-                        <select onchange="updateOverallChart('newsubs', this.value)"
-                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                            <option value="total">Program Total</option>
-                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
-                            endfor %}
-                        </select>
-                    </div>
-                    <div id="overall-newsubs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Schools & Learning
-                            Institutions</h4>
-                    </div>
-                    <select onchange="updateOverallChart('schools', this.value)"
-                        class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
-                        <option value="total">Program Total</option>
-                        {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{% endfor
-                        %}
-                    </select>
-                </div>
-                <div id="overall-schools-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- AI CHAT FLOATING BUTTON -->
-    <div class="fixed bottom-8 right-8 z-50">
-        <button id="injini-ai-btn"
-            class="bg-white text-injiniBlue p-0 rounded-full shadow-2xl hover:scale-105 transition-transform duration-200 border-2 border-injiniGold w-16 h-16 flex items-center justify-center group overflow-hidden">
-            <img src="/static/logo.svg" alt="Injini AI" class="w-10 h-10 object-contain ml-1 mt-1"
-                style="filter: brightness(0) saturate(100%) invert(11%) sepia(95%) saturate(6157%) hue-rotate(234deg) brightness(73%) contrast(131%);">
-            <span class="absolute -top-2 -right-2 w-5 h-5 bg-injiniRed rounded-full animate-ping"></span>
-        </button>
-    </div>
-
-    <!-- AI CHAT MODAL -->
-    <div id="ai-chat-modal"
-        class="fixed bottom-28 right-8 w-96 bg-white rounded-2xl shadow-2xl z-50 border border-slate-100 hidden flex flex-col overflow-hidden transition-all duration-300 transform scale-95 opacity-0 origin-bottom-right"
-        style="height: 500px;">
-        <div class="bg-gradient-to-r from-injiniBlue to-blue-900 p-4 flex justify-between items-center text-white">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-                    <img src="/static/logo.svg" class="w-5 h-5"
-                        style="filter: brightness(0) saturate(100%) invert(11%) sepia(95%) saturate(6157%) hue-rotate(234deg) brightness(73%) contrast(131%);">
-                </div>
-                <div>
-                    <h3 class="font-bold text-sm">Injini AI</h3>
-                    <p class="text-[10px] text-blue-200 flex items-center gap-1"><span
-                            class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online</p>
-                </div>
-            </div>
-            <button id="close-chat" class="text-white/80 hover:text-white transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
-        </div>
-        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 space-y-4 text-sm">
-            <div class="flex gap-3">
-                <div
-                    class="w-8 h-8 rounded-full bg-injiniGold/20 flex-shrink-0 flex items-center justify-center text-xs font-bold text-injiniBlue border border-injiniGold">
-                    AI</div>
-                <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-slate-700 border border-slate-100">
-                    Welcome to Injini AI! I'm here to help you uncover insights and analyze your venture data.
-                    What would you like to explore today? ✨
-                </div>
-            </div>
-        </div>
-        <div class="p-4 bg-white border-t border-slate-100">
-            <form id="chat-form" class="relative">
-                <input type="text" id="chat-input" placeholder="Ask a question about the data..."
-                    class="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-injiniBlue text-sm shadow-inner transition-all">
-                <button type="submit"
-                    class="absolute right-2 top-2 p-1.5 bg-injiniBlue text-white rounded-lg hover:bg-blue-800 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- ── SOLUTIONS REACHED ── -->
+            <div class="mb-10">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                        </path>
+                    </svg>
+                    Users Reached
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total
+                                    Subscribers</h4>
+                                <h2 class="text-2xl font-bold text-slate-800" id="subs-val-c{{ cnum }}">...</h2>
+                                <p class="text-xs text-slate-400 mt-1">Learners &amp; Educators by month</p>
+                            </div>
+                            <select id="subs-filter-c{{ cnum }}" onchange="updateChart('subs', {{ cnum }}, this.value)"
+                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                <option value="total">Cohort Total</option>
+                                {% for f in cd.get('users_table', []) %}
+                                <option value="{{ f.name }}">{{ f.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="subs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">New
+                                    Subscribers</h4>
+                                <h2 class="text-2xl font-bold text-slate-800" id="newsubs-val-c{{ cnum }}">...</h2>
+                                <p class="text-xs text-slate-400 mt-1">Cumulative month-on-month</p>
+                            </div>
+                            <select id="newsubs-filter-c{{ cnum }}"
+                                onchange="updateChart('newsubs', {{ cnum }}, this.value)"
+                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                <option value="total">Cohort Total</option>
+                                {% for f in cd.get('users_table', []) %}
+                                <option value="{{ f.name }}">{{ f.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="newsubs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Schools
+                                &amp; Learning Institutions</h4>
+                            <h2 class="text-2xl font-bold text-slate-800" id="schools-val-c{{ cnum }}">...</h2>
+                        </div>
+                        <select id="schools-filter-c{{ cnum }}"
+                            onchange="updateChart('schools', {{ cnum }}, this.value)"
+                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            <option value="total">Cohort Total</option>
+                            {% for f in cd.get('users_table', []) %}
+                            <option value="{{ f.name }}">{{ f.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div id="schools-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                </div>
+            </div>
+
+            <!-- Users Table (Per Fellow) -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th
+                                    class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Fellow Name</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Total Learners</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Total Educators</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    New Learners</th>
+                                <th
+                                    class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    New Educators</th>
+                                <th
+                                    class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                    Flags</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for u in cd.get('users_table', []) %}
+                            <tr class="hover:bg-slate-50/50 transition">
+                                <td class="px-6 py-4 font-semibold text-slate-900">{{ u.name }}</td>
+                                <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{
+                                    "{:,}".format(u.tot_learners) }}</td>
+                                <td class="px-6 py-4 text-right font-mono font-semibold text-green-600">{{
+                                    "{:,}".format(u.tot_educators) }}</td>
+                                <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                    "{:,}".format(u.new_learners) }}</td>
+                                <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                    "{:,}".format(u.new_educators) }}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-wrap gap-2">
+                                        {% for flag in u.flags %}
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-100 shadow-sm">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>{{ flag }}
+                                        </span>
+                                        {% endfor %}
+                                        {% if not u.flags %}-{% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not cd.get('users_table') %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No user data
+                                    available for this cohort</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── LEARNER DISAGGREGATION ── -->
+        <div class="mb-10">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                Learner Disaggregation
+            </h3>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <!-- Collapsible toggle bar -->
+                <button
+                    onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.disagg-arrow').classList.toggle('rotate-180')"
+                    class="w-full flex items-center justify-between px-6 py-4 bg-slate-50 hover:bg-slate-100 transition cursor-pointer border-b border-slate-200">
+                    <span class="text-sm font-semibold text-slate-600">
+                        {{ cd.get('disaggregation', [])|length }} fellow{{ 's' if cd.get('disaggregation',
+                        [])|length != 1 }} — Click to view disaggregation details
+                    </span>
+                    <svg class="disagg-arrow w-5 h-5 text-slate-400 transition-transform duration-200" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                        </path>
                     </svg>
                 </button>
-            </form>
+                <!-- Table (hidden by default) -->
+                <div class="hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Fellow Name</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Female</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Rural</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Learner with Disability</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for d in cd.get('disaggregation', []) %}
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="px-6 py-4 font-semibold text-slate-900">{{ d.name }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-pink-600">{{
+                                        "{:,}".format(d.female) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-amber-600">{{
+                                        "{:,}".format(d.rural) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-violet-600">{{
+                                        "{:,}".format(d.disability) }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% if not cd.get('disaggregation') %}
+                                <tr>
+                                    <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No
+                                        disaggregation data available</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+
+        </div>
+        {% endfor %}
+
+        <!-- ====== OVERALL TAB ====== -->
+        <div id="tab-Overall" class="tab-panel" style="display:none">
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-slate-900">Program Overview</h2>
+                <p class="text-slate-500 mt-0.5 text-sm">Cross-cohort comparison — live data from Airtable CRM</p>
+            </div>
+
+            <!-- ── BUSINESS OVERVIEW ── -->
+            <div class="mb-6 animate-section">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    Business Overview
+                </h3>
+
+                <!-- Program KPI Cards -->
+                {% set ov = kpis.Program_Overview %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div
+                        class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sales (YTD)
+                            </p>
+                            <h4 class="text-2xl font-bold text-slate-800" id="overall-sales-val">R {{
+                                "{:,.0f}".format(ov.Total_Sales_ZAR) }}</h4>
+                        </div>
+                    </div>
+                    <div
+                        class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Net Jobs Created
+                            </p>
+                            <h4 class="text-2xl font-bold text-slate-800">{{ ov.Net_Jobs_Created }}</h4>
+                        </div>
+                    </div>
+                    <div
+                        class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Sales
+                                Growth
+                            </p>
+                            <h4 class="text-2xl font-bold text-slate-800">{% if ov['Average_Sales_Growth_%'] ==
+                                "Insufficient Data" %}N/A{% else %}{{ ov['Average_Sales_Growth_%'] }}%{% endif %}</h4>
+                        </div>
+                    </div>
+                    <div
+                        class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Profit
+                                Growth
+                            </p>
+                            <h4 class="text-2xl font-bold text-slate-800">{% if ov['Average_Profit_Growth_%'] ==
+                                "Insufficient Data" %}N/A{% else %}{{ ov['Average_Profit_Growth_%'] }}%{% endif %}</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales & Profit Graphs -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                    <!-- Sales Graph -->
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales Over
+                                    Time
+                                </h4>
+                            </div>
+                            <select onchange="updateOverallChart('sales', this.value)"
+                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                <option value="total">Program Total</option>
+                                {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                                endfor %}
+                            </select>
+                        </div>
+                        <div id="overall-sales-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                    </div>
+                    <!-- Profit Graph -->
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Profit Over
+                                    Time
+                                </h4>
+                            </div>
+                            <select onchange="updateOverallChart('profit', this.value)"
+                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                <option value="total">Program Total</option>
+                                {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                                endfor %}
+                            </select>
+                        </div>
+                        <div id="overall-profit-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                    </div>
+                </div>
+
+                <!-- Cohort Comparison Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Cohort</th>
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Ventures</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Total Sales</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Total Profit</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Sales Growth</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Profit Growth</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for c in cohort_summaries %}
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
+                                    <td class="px-6 py-4 font-semibold text-slate-600">{{ c.Ventures }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">R {{
+                                        "{:,.0f}".format(c['Total Sales']) }}</td>
+                                    <td
+                                        class="px-6 py-4 text-right font-mono font-semibold {% if c['Total Profit'] >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                        R {{ "{:,.0f}".format(c['Total Profit']) }}</td>
+                                    {% set sg = c['Median Sales Growth'] %}
+                                    <td
+                                        class="px-6 py-4 text-right font-mono font-semibold {% if sg == 'Insufficient Data' %}text-slate-400{% elif sg >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                        {% if sg == 'Insufficient Data' %}N/A{% else %}{{ sg }}%{% endif %}</td>
+                                    {% set pg = c['Median Profit Growth'] %}
+                                    <td
+                                        class="px-6 py-4 text-right font-mono font-semibold {% if pg == 'Insufficient Data' %}text-slate-400{% elif pg >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                        {% if pg == 'Insufficient Data' %}N/A{% else %}{{ pg }}%{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── JOBS ── -->
+            <div class="mb-10">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-injiniGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
+                        </path>
+                    </svg>
+                    Jobs
+                </h3>
+
+                {% set js = jobs_summary %}
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Jobs</p>
+                        {% set tj = js['Total Jobs'] %}
+                        <p class="text-2xl font-bold text-slate-800 mt-1" id="overall-jobs-val">{{ "{:,}".format(tj) }}
+                        </p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Jobs</p>
+                        {% set nj = js['New Jobs'] %}
+                        <p
+                            class="text-2xl font-bold {% if nj >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
+                            {{ "{:+,}".format(nj) }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">% Change</p>
+                        {% set pc = js['Jobs Pct Change'] %}
+                        <p
+                            class="text-2xl font-bold {% if pc >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
+                            {{ pc }}%</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Female Jobs</p>
+                        {% set fj = js['Female Jobs'] %}
+                        <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(fj) }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Youth Jobs</p>
+                        {% set yj = js['Youth Jobs'] %}
+                        <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(yj) }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Female</p>
+                        <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Female Jobs']) }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Jobs Graph -->
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm mb-6 flex flex-col">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Jobs Over Time
+                            </h4>
+                        </div>
+                        <select onchange="updateOverallChart('jobs', this.value)"
+                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            <option value="total">Program Total</option>
+                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                            endfor
+                            %}
+                        </select>
+                    </div>
+                    <div id="overall-jobs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                </div>
+
+                <!-- Jobs Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Cohort</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Total Jobs</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        % Change</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for c in cohort_summaries %}
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                        "{:,}".format(c['Total Jobs']) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{ c['Jobs
+                                        Pct
+                                        Change'] }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── USERS REACHED ── -->
+            <div class="mb-10">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-injiniBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                        </path>
+                    </svg>
+                    Users Reached
+                </h3>
+
+                {% set rs = reach_summary %}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Subscribers</p>
+                        {% set ts = rs['Total Subscribers'] %}
+                        <p class="text-3xl font-bold text-slate-800 mt-1" id="overall-subs-val">{{ "{:,}".format(ts) }}
+                        </p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Subscribers</p>
+                        {% set ns = rs['New Subscribers'] %}
+                        <p class="text-3xl font-bold text-injiniGreen mt-1" id="overall-newsubs-val">{{
+                            "{:,}".format(ns) }}
+                        </p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Schools</p>
+                        {% set tsh = rs['Total Schools'] %}
+                        <p class="text-3xl font-bold text-injiniBlue mt-1" id="overall-schools-val">{{
+                            "{:,}".format(tsh) }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Reach Graphs -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Total Subscribers Graph -->
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total
+                                    Subscribers
+                                </h4>
+                            </div>
+                            <select onchange="updateOverallChart('subs', this.value)"
+                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                <option value="total">Program Total</option>
+                                {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                                endfor %}
+                            </select>
+                        </div>
+                        <div id="overall-subs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                    </div>
+                    <!-- New Subscribers Graph -->
+                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">New
+                                    Subscribers
+                                </h4>
+                            </div>
+                            <select onchange="updateOverallChart('newsubs', this.value)"
+                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                <option value="total">Program Total</option>
+                                {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                                endfor %}
+                            </select>
+                        </div>
+                        <div id="overall-newsubs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Schools &
+                                Learning
+                                Institutions</h4>
+                        </div>
+                        <select onchange="updateOverallChart('schools', this.value)"
+                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            <option value="total">Program Total</option>
+                            {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
+                            endfor
+                            %}
+                        </select>
+                    </div>
+                    <div id="overall-schools-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI CHAT FLOATING BUTTON -->
+        <div class="fixed bottom-8 right-8 z-50">
+            <button id="injini-ai-btn"
+                class="bg-white text-injiniBlue p-0 rounded-full shadow-2xl hover:scale-105 transition-transform duration-200 border-2 border-injiniGold w-16 h-16 flex items-center justify-center group overflow-hidden">
+                <img src="/static/logo.svg" alt="Injini AI" class="w-10 h-10 object-contain ml-1 mt-1"
+                    style="filter: brightness(0) saturate(100%) invert(11%) sepia(95%) saturate(6157%) hue-rotate(234deg) brightness(73%) contrast(131%);">
+                <span class="absolute -top-2 -right-2 w-5 h-5 bg-injiniRed rounded-full animate-ping"></span>
+            </button>
+        </div>
+
+        <!-- AI CHAT MODAL -->
+        <div id="ai-chat-modal"
+            class="fixed bottom-28 right-8 w-96 bg-white rounded-2xl shadow-2xl z-50 border border-slate-100 hidden flex flex-col overflow-hidden transition-all duration-300 transform scale-95 opacity-0 origin-bottom-right"
+            style="height: 500px;">
+            <div class="bg-gradient-to-r from-injiniBlue to-blue-900 p-4 flex justify-between items-center text-white">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                        <img src="/static/logo.svg" class="w-5 h-5"
+                            style="filter: brightness(0) saturate(100%) invert(11%) sepia(95%) saturate(6157%) hue-rotate(234deg) brightness(73%) contrast(131%);">
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm">Injini AI</h3>
+                        <p class="text-[10px] text-blue-200 flex items-center gap-1"><span
+                                class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online</p>
+                    </div>
+                </div>
+                <button id="close-chat" class="text-white/80 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 space-y-4 text-sm">
+                <div class="flex gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-injiniGold/20 flex-shrink-0 flex items-center justify-center text-xs font-bold text-injiniBlue border border-injiniGold">
+                        AI</div>
+                    <div
+                        class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-slate-700 border border-slate-100">
+                        Welcome to Injini AI! I'm here to help you uncover insights and analyze your venture data.
+                        What would you like to explore today? ✨
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white border-t border-slate-100">
+                <form id="chat-form" class="relative">
+                    <input type="text" id="chat-input" placeholder="Ask a question about the data..."
+                        class="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-injiniBlue text-sm shadow-inner transition-all">
+                    <button type="submit"
+                        class="absolute right-2 top-2 p-1.5 bg-injiniBlue text-white rounded-lg hover:bg-blue-800 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
 
     </main>
     </div>
