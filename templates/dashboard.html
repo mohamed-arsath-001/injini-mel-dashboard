@@ -7,7 +7,7 @@
     <title>Injini | MEL Dashboard</title>
     <meta name="description"
         content="Injini MEL Dashboard — Real-time monitoring of EdTech venture performance across all cohorts.">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
@@ -15,7 +15,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Montserrat', 'sans-serif'] },
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
                     colors: {
                         injiniBlue: '#001c94',
                         injiniGold: '#ffd100',
@@ -95,9 +95,22 @@
             animation: fadeInUp 0.35s ease-out both;
         }
 
+        .bento-card {
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04);
+            border-radius: 1.25rem;
+            border: 1px solid rgba(241, 245, 249, 0.5);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .bento-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 45px -10px rgba(0, 28, 148, 0.06);
+        }
+
         /* Sidebar active glow */
         .sidebar-link.active {
-            box-shadow: inset 3px 0 0 #ffd100;
+            box-shadow: inset 3px 0 0 white;
+            background-color: rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
@@ -106,24 +119,37 @@
 
     <!-- SIDEBAR (fixed) -->
     <aside
-        class="fixed top-0 left-0 w-64 h-screen bg-injiniBlue text-white flex flex-col shadow-xl z-20 overflow-hidden">
-        <div class="p-4 pb-2 relative overflow-hidden" style="min-height:64px;">
+        class="fixed top-0 left-0 w-64 h-screen bg-slate-900/90 backdrop-blur-xl text-white flex flex-col z-20 overflow-hidden border-r border-slate-800/50">
+        <div class="p-6 pb-2 relative overflow-hidden flex items-center" style="min-height:80px;">
             <spline-viewer url="https://prod.spline.design/1e9d1552-3443-485d-a066-e46604b8db02/scene.splinecode"
-                style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.25;">
+                style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.20;">
             </spline-viewer>
             <img src="/static/logo.svg" alt="Injini Logo" class="h-10 relative z-10">
         </div>
-        <nav class="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+        
+        <div class="px-6 py-2">
+            <p class="text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-4 mt-2">Cohorts</p>
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-1.5 overflow-y-auto">
             {% for tab in ['Cohort 1', 'Cohort 2', 'Cohort 3', 'Cohort 4', 'Overall'] %}
+            {% if loop.last %}
+            <div class="pt-4 pb-2 px-2">
+                <p class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Program</p>
+            </div>
+            {% endif %}
             <button data-tab="{{ tab }}" onclick="switchTab('{{ tab }}')"
-                class="sidebar-link w-full text-left block px-4 py-3 rounded-lg text-sm font-medium transition
-                    {% if loop.first %}bg-blue-800/50 border-l-4 border-injiniGold text-white{% else %}text-blue-100 hover:bg-blue-800/50{% endif %}">
+                class="sidebar-link w-full text-left flex items-center px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200
+                    {% if loop.first %}bg-white/10 text-white shadow-inner{% else %}text-slate-300 hover:bg-white/5 hover:text-white{% endif %}">
                 {{ tab }}
             </button>
             {% endfor %}
         </nav>
-        <div class="p-4 border-t border-blue-800/50">
-            <p class="text-[10px] text-blue-300 uppercase tracking-widest">Powered by Injini MEL</p>
+        <div class="p-6">
+            <div class="p-4 rounded-xl bg-gradient-to-br from-injiniBlue to-blue-900 border border-blue-800/50 shadow-inner">
+                <p class="text-[10px] text-blue-200 uppercase tracking-widest font-bold mb-1">Powered by</p>
+                <p class="text-sm font-semibold text-white">Injini MEL Core</p>
+            </div>
         </div>
     </aside>
 
@@ -152,49 +178,48 @@
                     Business Health
                 </h3>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
+                    <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales
-                                    Growth</h4>
-                                <h2 class="text-2xl font-bold text-slate-800" id="sales-val-c{{ cnum }}">...</h2>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Sales Growth</h4>
+                                <h2 class="text-3xl font-bold text-slate-800" id="sales-val-c{{ cnum }}">...</h2>
                             </div>
                             <select id="sales-filter-c{{ cnum }}"
                                 onchange="updateChart('sales', {{ cnum }}, this.value)"
-                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                                 <option value="total">Cohort Total</option>
                                 {% for f in cd.get('fellows_sales', []) %}
                                 <option value="{{ f.name }}">{{ f.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div id="sales-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                        <div id="sales-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3 relative z-10"></div>
                     </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
+                    
+                    <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Profit
-                                    Growth</h4>
-                                <h2 class="text-2xl font-bold text-slate-800" id="profit-val-c{{ cnum }}">...</h2>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Profit Growth</h4>
+                                <h2 class="text-3xl font-bold text-slate-800" id="profit-val-c{{ cnum }}">...</h2>
                             </div>
                             <select id="profit-filter-c{{ cnum }}"
                                 onchange="updateChart('profit', {{ cnum }}, this.value)"
-                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                                 <option value="total">Cohort Total</option>
                                 {% for f in cd.get('fellows_profit', []) %}
                                 <option value="{{ f.name }}">{{ f.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div id="profit-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                        <div id="profit-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3 relative z-10"></div>
                     </div>
                 </div>
                 <!-- Growth % Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
+                <div class="bento-card bg-white overflow-hidden mt-6">
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200">
+                                <tr class="bg-slate-50/70 border-b border-slate-100">
                                     <th
                                         class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
                                         Fellow Name</th>
@@ -209,7 +234,7 @@
                                         Flags</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
+                            <tbody class="divide-y divide-slate-50">
                                 {% for g in cd.get('growth_table', []) %}
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="px-6 py-4 font-semibold text-slate-900">{{ g.name }}</td>
@@ -270,15 +295,14 @@
                     </svg>
                     Jobs
                 </h3>
-                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm mb-6 flex flex-col">
+                <div class="bento-card bg-white p-6 mb-6 flex flex-col">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Jobs
-                            </h4>
-                            <h2 class="text-2xl font-bold text-slate-800" id="jobs-val-c{{ cnum }}">...</h2>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Jobs</h4>
+                            <h2 class="text-3xl font-bold text-slate-800" id="jobs-val-c{{ cnum }}">...</h2>
                         </div>
                         <select id="jobs-filter-c{{ cnum }}" onchange="updateChart('jobs', {{ cnum }}, this.value)"
-                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                             <option value="total">Cohort Total</option>
                             {% for f in cd.get('jobs_table', []) %}
                             <option value="{{ f.name }}">{{ f.name }}</option>
@@ -287,11 +311,11 @@
                     </div>
                     <div id="jobs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bento-card bg-white overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200">
+                                <tr class="bg-slate-50/70 border-b border-slate-100">
                                     <th
                                         class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
                                         Fellow Name</th>
@@ -312,7 +336,7 @@
                                         Youth Jobs</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
+                            <tbody class="divide-y divide-slate-50">
                                 {% for j in cd.get('jobs_table', []) %}
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="px-6 py-4 font-semibold text-slate-900">{{ j.name }}</td>
@@ -352,7 +376,7 @@
                     </svg>
                     Investments
                 </h3>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bento-card bg-white overflow-hidden">
                     <!-- Collapsible toggle bar -->
                     <button
                         onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.inv-arrow').classList.toggle('rotate-180')"
@@ -426,16 +450,15 @@
                     Users Reached
                 </h3>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total
-                                    Subscribers</h4>
-                                <h2 class="text-2xl font-bold text-slate-800" id="subs-val-c{{ cnum }}">...</h2>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Subscribers</h4>
+                                <h2 class="text-3xl font-bold text-slate-800" id="subs-val-c{{ cnum }}">...</h2>
                                 <p class="text-xs text-slate-400 mt-1">Learners &amp; Educators by month</p>
                             </div>
                             <select id="subs-filter-c{{ cnum }}" onchange="updateChart('subs', {{ cnum }}, this.value)"
-                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                                 <option value="total">Cohort Total</option>
                                 {% for f in cd.get('users_table', []) %}
                                 <option value="{{ f.name }}">{{ f.name }}</option>
@@ -444,17 +467,16 @@
                         </div>
                         <div id="subs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                     </div>
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">New
-                                    Subscribers</h4>
-                                <h2 class="text-2xl font-bold text-slate-800" id="newsubs-val-c{{ cnum }}">...</h2>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">New Subscribers</h4>
+                                <h2 class="text-3xl font-bold text-slate-800" id="newsubs-val-c{{ cnum }}">...</h2>
                                 <p class="text-xs text-slate-400 mt-1">Cumulative month-on-month</p>
                             </div>
                             <select id="newsubs-filter-c{{ cnum }}"
                                 onchange="updateChart('newsubs', {{ cnum }}, this.value)"
-                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                                 <option value="total">Cohort Total</option>
                                 {% for f in cd.get('users_table', []) %}
                                 <option value="{{ f.name }}">{{ f.name }}</option>
@@ -464,16 +486,15 @@
                         <div id="newsubs-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                <div class="bento-card bg-white p-6 flex flex-col">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Schools
-                                &amp; Learning Institutions</h4>
-                            <h2 class="text-2xl font-bold text-slate-800" id="schools-val-c{{ cnum }}">...</h2>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Schools &amp; Learning Institutions</h4>
+                            <h2 class="text-3xl font-bold text-slate-800" id="schools-val-c{{ cnum }}">...</h2>
                         </div>
                         <select id="schools-filter-c{{ cnum }}"
                             onchange="updateChart('schools', {{ cnum }}, this.value)"
-                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                             <option value="total">Cohort Total</option>
                             {% for f in cd.get('users_table', []) %}
                             <option value="{{ f.name }}">{{ f.name }}</option>
@@ -485,7 +506,7 @@
             </div>
 
             <!-- Users Table (Per Fellow) -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
+            <div class="bento-card bg-white overflow-hidden mt-6">
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
@@ -636,58 +657,46 @@
 
                 <!-- Program KPI Cards -->
                 {% set ov = kpis.Program_Overview %}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div
-                        class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+                    <div class="bento-card bg-white p-5 flex items-center justify-between animate-card">
                         <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sales (YTD)
-                            </p>
-                            <h4 class="text-2xl font-bold text-slate-800" id="overall-sales-val">R {{
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Sales (YTD)</p>
+                            <h4 class="text-3xl font-bold text-slate-800" id="overall-sales-val">R {{
                                 "{:,.0f}".format(ov.Total_Sales_ZAR) }}</h4>
                         </div>
                     </div>
-                    <div
-                        class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
+                    <div class="bento-card bg-white p-5 flex items-center justify-between animate-card">
                         <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Net Jobs Created
-                            </p>
-                            <h4 class="text-2xl font-bold text-slate-800">{{ ov.Net_Jobs_Created }}</h4>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Net Jobs Created</p>
+                            <h4 class="text-3xl font-bold text-slate-800">{{ ov.Net_Jobs_Created }}</h4>
                         </div>
                     </div>
-                    <div
-                        class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
+                    <div class="bento-card bg-white p-5 flex items-center justify-between animate-card">
                         <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Sales
-                                Growth
-                            </p>
-                            <h4 class="text-2xl font-bold text-slate-800">{% if ov['Average_Sales_Growth_%'] ==
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Median Sales Growth</p>
+                            <h4 class="text-3xl font-bold text-slate-800">{% if ov['Average_Sales_Growth_%'] ==
                                 "Insufficient Data" %}N/A{% else %}{{ ov['Average_Sales_Growth_%'] }}%{% endif %}</h4>
                         </div>
                     </div>
-                    <div
-                        class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex items-center justify-between hover-lift animate-card">
+                    <div class="bento-card bg-white p-5 flex items-center justify-between animate-card">
                         <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Median Profit
-                                Growth
-                            </p>
-                            <h4 class="text-2xl font-bold text-slate-800">{% if ov['Average_Profit_Growth_%'] ==
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Median Profit Growth</p>
+                            <h4 class="text-3xl font-bold text-slate-800">{% if ov['Average_Profit_Growth_%'] ==
                                 "Insufficient Data" %}N/A{% else %}{{ ov['Average_Profit_Growth_%'] }}%{% endif %}</h4>
                         </div>
                     </div>
                 </div>
 
                 <!-- Sales & Profit Graphs -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <!-- Sales Graph -->
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col hover-lift">
+                    <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Sales Over
-                                    Time
-                                </h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Sales Over Time</h4>
                             </div>
                             <select onchange="updateOverallChart('sales', this.value)"
-                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                                 <option value="total">Program Total</option>
                                 {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
                                 endfor %}
@@ -696,15 +705,13 @@
                         <div id="overall-sales-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                     </div>
                     <!-- Profit Graph -->
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Profit Over
-                                    Time
-                                </h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Profit Over Time</h4>
                             </div>
                             <select onchange="updateOverallChart('profit', this.value)"
-                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                                 <option value="total">Program Total</option>
                                 {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
                                 endfor %}
@@ -715,11 +722,11 @@
                 </div>
 
                 <!-- Cohort Comparison Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bento-card bg-white overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200">
+                                <tr class="bg-slate-50/70 border-b border-slate-100">
                                     <th
                                         class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
                                         Cohort</th>
@@ -740,7 +747,7 @@
                                         Profit Growth</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
+                            <tbody class="divide-y divide-slate-50">
                                 {% for c in cohort_summaries %}
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
@@ -779,52 +786,45 @@
 
                 {% set js = jobs_summary %}
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Jobs</p>
+                    <div class="bento-card bg-white p-4 text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Total Jobs</p>
                         {% set tj = js['Total Jobs'] %}
-                        <p class="text-2xl font-bold text-slate-800 mt-1" id="overall-jobs-val">{{ "{:,}".format(tj) }}
-                        </p>
+                        <p class="text-2xl font-bold text-slate-800 mt-1" id="overall-jobs-val">{{ "{:,}".format(tj) }}</p>
                     </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Jobs</p>
+                    <div class="bento-card bg-white p-4 text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">New Jobs</p>
                         {% set nj = js['New Jobs'] %}
-                        <p
-                            class="text-2xl font-bold {% if nj >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
-                            {{ "{:+,}".format(nj) }}</p>
+                        <p class="text-2xl font-bold {% if nj >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">{{ "{:+,}".format(nj) }}</p>
                     </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">% Change</p>
+                    <div class="bento-card bg-white p-4 text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">% Change</p>
                         {% set pc = js['Jobs Pct Change'] %}
-                        <p
-                            class="text-2xl font-bold {% if pc >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
-                            {{ pc }}%</p>
+                        <p class="text-2xl font-bold {% if pc >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">{{ pc }}%</p>
                     </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Female Jobs</p>
+                    <div class="bento-card bg-white p-4 text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Female Jobs</p>
                         {% set fj = js['Female Jobs'] %}
                         <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(fj) }}</p>
                     </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Youth Jobs</p>
+                    <div class="bento-card bg-white p-4 text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Youth Jobs</p>
                         {% set yj = js['Youth Jobs'] %}
                         <p class="text-2xl font-bold text-slate-800 mt-1">{{ "{:,}".format(yj) }}</p>
                     </div>
-                    <div class="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Female</p>
-                        <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Female Jobs']) }}
-                        </p>
+                    <div class="bento-card bg-white p-4 text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">New Female</p>
+                        <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Female Jobs']) }}</p>
                     </div>
                 </div>
 
                 <!-- Jobs Graph -->
-                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm mb-6 flex flex-col">
+                <div class="bento-card bg-white p-6 mb-6 flex flex-col">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Jobs Over Time
-                            </h4>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Jobs Over Time</h4>
                         </div>
                         <select onchange="updateOverallChart('jobs', this.value)"
-                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                             <option value="total">Program Total</option>
                             {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
                             endfor
@@ -835,11 +835,11 @@
                 </div>
 
                 <!-- Jobs Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bento-card bg-white overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200">
+                                <tr class="bg-slate-50/70 border-b border-slate-100">
                                     <th
                                         class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
                                         Cohort</th>
@@ -851,7 +851,7 @@
                                         % Change</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
+                            <tbody class="divide-y divide-slate-50">
                                 {% for c in cohort_summaries %}
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
@@ -883,40 +883,33 @@
 
                 {% set rs = reach_summary %}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Subscribers</p>
+                    <div class="bento-card bg-white p-5 text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Total Subscribers</p>
                         {% set ts = rs['Total Subscribers'] %}
-                        <p class="text-3xl font-bold text-slate-800 mt-1" id="overall-subs-val">{{ "{:,}".format(ts) }}
-                        </p>
+                        <p class="text-3xl font-bold text-slate-800 mt-1" id="overall-subs-val">{{ "{:,}".format(ts) }}</p>
                     </div>
-                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">New Subscribers</p>
+                    <div class="bento-card bg-white p-5 text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">New Subscribers</p>
                         {% set ns = rs['New Subscribers'] %}
-                        <p class="text-3xl font-bold text-injiniGreen mt-1" id="overall-newsubs-val">{{
-                            "{:,}".format(ns) }}
-                        </p>
+                        <p class="text-3xl font-bold text-injiniGreen mt-1" id="overall-newsubs-val">{{ "{:,}".format(ns) }}</p>
                     </div>
-                    <div class="bg-white rounded-xl p-5 border border-slate-100 shadow-sm text-center">
-                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Schools</p>
+                    <div class="bento-card bg-white p-5 text-center">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Total Schools</p>
                         {% set tsh = rs['Total Schools'] %}
-                        <p class="text-3xl font-bold text-injiniBlue mt-1" id="overall-schools-val">{{
-                            "{:,}".format(tsh) }}
-                        </p>
+                        <p class="text-3xl font-bold text-injiniBlue mt-1" id="overall-schools-val">{{ "{:,}".format(tsh) }}</p>
                     </div>
                 </div>
 
                 <!-- Reach Graphs -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <!-- Total Subscribers Graph -->
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total
-                                    Subscribers
-                                </h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Subscribers</h4>
                             </div>
                             <select onchange="updateOverallChart('subs', this.value)"
-                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                                 <option value="total">Program Total</option>
                                 {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
                                 endfor %}
@@ -925,15 +918,13 @@
                         <div id="overall-subs-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
                     </div>
                     <!-- New Subscribers Graph -->
-                    <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                    <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">New
-                                    Subscribers
-                                </h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">New Subscribers</h4>
                             </div>
                             <select onchange="updateOverallChart('newsubs', this.value)"
-                                class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                                class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                                 <option value="total">Program Total</option>
                                 {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
                                 endfor %}
@@ -943,15 +934,13 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col">
+                <div class="bento-card bg-white p-6 flex flex-col">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Schools &
-                                Learning
-                                Institutions</h4>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Schools & Learning Institutions</h4>
                         </div>
                         <select onchange="updateOverallChart('schools', this.value)"
-                            class="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-injiniBlue focus:border-injiniBlue pb-1 pt-1 pl-2 pr-8">
+                            class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
                             <option value="total">Program Total</option>
                             {% for c in cohort_summaries %}<option value="{{ c.Cohort }}">{{ c.Cohort }}</option>{%
                             endfor
@@ -959,6 +948,54 @@
                         </select>
                     </div>
                     <div id="overall-schools-chart" style="min-height: 280px;" class="mt-auto -ml-3"></div>
+                </div>
+
+                <!-- Users Table (Program Level) -->
+                <div class="bento-card bg-white overflow-hidden mt-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-slate-50/70 border-b border-slate-100">
+                                    <th
+                                        class="px-6 py-4 text-left font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Cohort</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Total Learners</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Total Educators</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        New Learners</th>
+                                    <th
+                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        New Educators</th>
+                                    <th
+                                        class="px-6 py-4 text-center font-bold text-slate-500 uppercase text-xs tracking-wider">
+                                        Flags</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                {% for c in cohort_summaries %}
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                        "{:,}".format(c['Total Learners']) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">{{
+                                        "{:,}".format(c['Total Educators']) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{
+                                        "{:,}".format(c['New Learners']) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold text-injiniBlue">{{
+                                        "{:,}".format(c['New Educators']) }}</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-slate-300 font-mono">—</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1031,7 +1068,7 @@
         const tsData = {{ time_series_json | safe }};
         const cohortData = {{ cohort_detail_json | safe }};
         const cohortColors = { 'Cohort 1': '#001c94', 'Cohort 2': '#008a40', 'Cohort 3': '#ffd100', 'Cohort 4': '#ff585f' };
-        const chartDefaults = { fontFamily: 'Montserrat', toolbar: { show: false } };
+        const chartDefaults = { fontFamily: 'Outfit', toolbar: { show: false } };
         const renderedCharts = {};
 
         // ─── LINEAR TREND HELPER ───
@@ -1053,8 +1090,8 @@
 
             document.querySelectorAll('.sidebar-link').forEach(el => {
                 const isActive = el.dataset.tab === tabName;
-                el.className = 'sidebar-link w-full text-left block px-4 py-3 rounded-lg text-sm font-medium transition '
-                    + (isActive ? 'bg-blue-800/50 border-l-4 border-injiniGold text-white' : 'text-blue-100 hover:bg-blue-800/50');
+                el.className = 'sidebar-link w-full text-left flex items-center px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 '
+                    + (isActive ? 'bg-white/10 text-white shadow-inner' : 'text-slate-300 hover:bg-white/5 hover:text-white');
             });
 
             // Lazy-init charts after tab is visible
@@ -1195,7 +1232,7 @@
             const lineOpts = (type, seriesData) => ({
                 chart: { type: 'line', height: 280, ...chartDefaults },
                 series: seriesData,
-                stroke: { width: [3.5, 2], curve: 'smooth', dashArray: [0, 8] },
+                stroke: { width: [3, 2], curve: 'smooth', dashArray: [0, 8] },
                 colors: type === 'profit' ? ['#008a40', '#9ca3af'] : ['#001c94', '#9ca3af'],
                 xaxis: { type: 'datetime', labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
                 yaxis: { labels: { formatter: v => 'R ' + (v / 1000).toFixed(0) + 'k' } },
