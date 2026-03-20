@@ -472,23 +472,39 @@ def calculate_kpis(df):
         # 1. Per-fellow sales & profit time series (for line charts)
         fellows_sales = []
         fellows_profit = []
+        cohort_sg_vals = []
+        cohort_pg_vals = []
+        cohort_month_counts = []
+
         for biz_name, biz_group in valid.groupby('Business Name'):
             biz_sorted = biz_group.sort_values('Date')
+            
+            sg = _tiered_sales_growth(biz_sorted['Monthly Sales (R)'])
+            pg = _tiered_profit_growth(biz_sorted['Monthly Net Profit'])
+            if isinstance(sg, (int, float)): cohort_sg_vals.append(sg)
+            if isinstance(pg, (int, float)): cohort_pg_vals.append(pg)
+            cohort_month_counts.append(len(biz_sorted))
+
             months = biz_sorted['Date'].dt.strftime('%Y-%m').tolist()
             sales = [round(float(v)) for v in biz_sorted['Monthly Sales (R)'].tolist()]
             profit = [round(float(v)) for v in biz_sorted['Monthly Net Profit'].tolist()]
+            
             fellows_sales.append({
                 'name': biz_name,
-                'growth': sg, # Added for header display
+                'growth': sg,
                 'months': len(biz_sorted),
                 'data': [{'x': m, 'y': s} for m, s in zip(months, sales)]
             })
             fellows_profit.append({
                 'name': biz_name,
-                'growth': pg, # Added for header display
+                'growth': pg,
                 'months': len(biz_sorted),
                 'data': [{'x': m, 'y': p} for m, p in zip(months, profit)]
             })
+
+        cohort_median_sg = round(median(cohort_sg_vals), 1) if cohort_sg_vals else "Insufficient Data"
+        cohort_median_pg = round(median(cohort_pg_vals), 1) if cohort_pg_vals else "Insufficient Data"
+        avg_months = sum(cohort_month_counts) / len(cohort_month_counts) if cohort_month_counts else 0
 
         # 2. Jobs clustered bar chart data (aggregated by month)
         if not valid.empty:
