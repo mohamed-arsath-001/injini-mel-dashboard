@@ -465,7 +465,7 @@ def calculate_kpis(df):
 
     # ── Cohort Detail for tabbed dashboard ──
     cohort_detail = {}
-    for cohort_name in sorted(df['Cohort'].unique()):
+    for cohort_name in ['Cohort 1', 'Cohort 2', 'Cohort 3', 'Cohort 4']:
         cohort_df = df[df['Cohort'] == cohort_name].copy()
         valid = cohort_df[cohort_df['Date'].notna()]
 
