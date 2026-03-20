@@ -126,11 +126,11 @@
             </spline-viewer>
             <img src="/static/logo.svg" alt="Injini Logo" class="h-10 relative z-10">
         </div>
-        
+
         <div class="px-6 py-2">
             <p class="text-[10px] font-bold tracking-widest text-slate-400 uppercase mb-4 mt-2">Cohorts</p>
         </div>
-        
+
         <nav class="flex-1 px-4 space-y-1.5 overflow-y-auto">
             {% for tab in ['Cohort 1', 'Cohort 2', 'Cohort 3', 'Cohort 4', 'Overall'] %}
             {% if loop.last %}
@@ -146,7 +146,8 @@
             {% endfor %}
         </nav>
         <div class="p-6">
-            <div class="p-4 rounded-xl bg-gradient-to-br from-injiniBlue to-blue-900 border border-blue-800/50 shadow-inner">
+            <div
+                class="p-4 rounded-xl bg-gradient-to-br from-injiniBlue to-blue-900 border border-blue-800/50 shadow-inner">
                 <p class="text-[10px] text-blue-200 uppercase tracking-widest font-bold mb-1">Powered by</p>
                 <p class="text-sm font-semibold text-white">Injini MEL Core</p>
             </div>
@@ -181,7 +182,8 @@
                     <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Sales Growth</h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Sales Growth
+                                </h4>
                                 <h2 class="text-3xl font-bold text-slate-800" id="sales-val-c{{ cnum }}">...</h2>
                             </div>
                             <select id="sales-filter-c{{ cnum }}"
@@ -193,13 +195,15 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div id="sales-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3 relative z-10"></div>
+                        <div id="sales-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3 relative z-10">
+                        </div>
                     </div>
-                    
+
                     <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Profit Growth</h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Profit
+                                    Growth</h4>
                                 <h2 class="text-3xl font-bold text-slate-800" id="profit-val-c{{ cnum }}">...</h2>
                             </div>
                             <select id="profit-filter-c{{ cnum }}"
@@ -211,7 +215,8 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div id="profit-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3 relative z-10"></div>
+                        <div id="profit-c{{ cnum }}" style="min-height: 280px;" class="mt-auto -ml-3 relative z-10">
+                        </div>
                     </div>
                 </div>
                 <!-- Growth % Table -->
@@ -235,6 +240,28 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-50">
+                                <!-- Cohort Summary Row -->
+                                <tr class="bg-injiniBlue/5 font-bold">
+                                    <td class="px-6 py-4 text-slate-900 italic">Cohort Average/Median</td>
+                                    <td
+                                        class="px-6 py-4 text-right {% if cd.cohort_median_sg >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                        {{ cd.cohort_median_sg }}%
+                                    </td>
+                                    <td
+                                        class="px-6 py-4 text-right {% if cd.cohort_median_pg >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
+                                        {{ cd.cohort_median_pg }}%
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-wrap gap-1 justify-center">
+                                            <span
+                                                class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">Macro
+                                                View</span>
+                                            <span
+                                                class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 text-[10px] italic">Avg
+                                                {{ cd.cohort_months }} months</span>
+                                        </div>
+                                    </td>
+                                </tr>
                                 {% for g in cd.get('growth_table', []) %}
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="px-6 py-4 font-semibold text-slate-900">{{ g.name }}</td>
@@ -269,6 +296,9 @@
                                             {% endif %}
                                             {% endfor %}
                                             {% if not g.flags %}<span class="text-slate-300">—</span>{% endif %}
+                                            <span
+                                                class="px-2 py-0.5 rounded-full bg-slate-50 text-slate-400 text-[9px] italic ml-1">{{
+                                                g.months }}m cover</span>
                                         </div>
                                     </td>
                                 </tr>
@@ -298,7 +328,8 @@
                 <div class="bento-card bg-white p-6 mb-6 flex flex-col">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Jobs</h4>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Current
+                                Jobs</h4>
                             <h2 class="text-3xl font-bold text-slate-800" id="jobs-val-c{{ cnum }}">...</h2>
                         </div>
                         <select id="jobs-filter-c{{ cnum }}" onchange="updateChart('jobs', {{ cnum }}, this.value)"
@@ -337,6 +368,19 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-50">
+                                <!-- Cohort Summary Row -->
+                                <tr class="bg-injiniBlue/5 font-bold">
+                                    <td class="px-6 py-4 text-slate-900 italic">Cohort Total</td>
+                                    <td class="px-6 py-4 text-right text-slate-900">{{
+                                        "{:,}".format(cd.get('jobs_table', [])|sum(attribute='total')) }}</td>
+                                    <td class="px-6 py-4 text-right text-injiniBlue">+{{
+                                        "{:,}".format(cd.get('jobs_table', [])|sum(attribute='new')) }}</td>
+                                    <td class="px-6 py-4 text-right text-slate-600 opacity-60 italic">-</td>
+                                    <td class="px-6 py-4 text-right text-injiniBlue">{{
+                                        "{:+,}".format(cd.get('jobs_table', [])|sum(attribute='new_female')) }}</td>
+                                    <td class="px-6 py-4 text-right text-slate-800">{{
+                                        "{:,}".format(cd.get('jobs_table', [])|sum(attribute='youth')) }}</td>
+                                </tr>
                                 {% for j in cd.get('jobs_table', []) %}
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="px-6 py-4 font-semibold text-slate-900">{{ j.name }}</td>
@@ -453,7 +497,8 @@
                     <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Subscribers</h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total
+                                    Subscribers</h4>
                                 <h2 class="text-3xl font-bold text-slate-800" id="subs-val-c{{ cnum }}">...</h2>
                                 <p class="text-xs text-slate-400 mt-1">Learners &amp; Educators by month</p>
                             </div>
@@ -470,7 +515,8 @@
                     <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">New Subscribers</h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">New
+                                    Subscribers</h4>
                                 <h2 class="text-3xl font-bold text-slate-800" id="newsubs-val-c{{ cnum }}">...</h2>
                                 <p class="text-xs text-slate-400 mt-1">Cumulative month-on-month</p>
                             </div>
@@ -489,7 +535,8 @@
                 <div class="bento-card bg-white p-6 flex flex-col">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Schools &amp; Learning Institutions</h4>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Schools
+                                &amp; Learning Institutions</h4>
                             <h2 class="text-3xl font-bold text-slate-800" id="schools-val-c{{ cnum }}">...</h2>
                         </div>
                         <select id="schools-filter-c{{ cnum }}"
@@ -532,6 +579,19 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
+                            <!-- Cohort Summary Row -->
+                            <tr class="bg-injiniBlue/5 font-bold">
+                                <td class="px-6 py-4 text-slate-900 italic">Cohort Total</td>
+                                <td class="px-6 py-4 text-right text-injiniBlue">{{ "{:,}".format(cd.get('users_table',
+                                    [])|sum(attribute='tot_learners')) }}</td>
+                                <td class="px-6 py-4 text-right text-green-600">{{ "{:,}".format(cd.get('users_table',
+                                    [])|sum(attribute='tot_educators')) }}</td>
+                                <td class="px-6 py-4 text-right text-slate-800">{{ "{:,}".format(cd.get('users_table',
+                                    [])|sum(attribute='new_learners')) }}</td>
+                                <td class="px-6 py-4 text-right text-slate-800">{{ "{:,}".format(cd.get('users_table',
+                                    [])|sum(attribute='new_educators')) }}</td>
+                                <td class="px-6 py-4 text-xs italic text-slate-400 opacity-70">Macro View</td>
+                            </tr>
                             {% for u in cd.get('users_table', []) %}
                             <tr class="hover:bg-slate-50/50 transition">
                                 <td class="px-6 py-4 font-semibold text-slate-900">{{ u.name }}</td>
@@ -660,29 +720,36 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
                     <div class="bento-card bg-white p-5 flex items-center justify-between animate-card">
                         <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Sales (YTD)</p>
-                            <h4 class="text-3xl font-bold text-slate-800" id="overall-sales-val">R {{
-                                "{:,.0f}".format(ov.Total_Sales_ZAR) }}</h4>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Median Sales
+                                Growth</p>
+                            <h4 class="text-3xl font-bold text-slate-800">
+                                {% if ov['Average_Sales_Growth_%'] == "Insufficient Data" %}N/A{% else %}{{
+                                ov['Average_Sales_Growth_%'] }}%{% endif %}
+                            </h4>
                         </div>
                     </div>
                     <div class="bento-card bg-white p-5 flex items-center justify-between animate-card">
                         <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Net Jobs Created</p>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Net Jobs Created
+                            </p>
                             <h4 class="text-3xl font-bold text-slate-800">{{ ov.Net_Jobs_Created }}</h4>
                         </div>
                     </div>
                     <div class="bento-card bg-white p-5 flex items-center justify-between animate-card">
                         <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Median Sales Growth</p>
-                            <h4 class="text-3xl font-bold text-slate-800">{% if ov['Average_Sales_Growth_%'] ==
-                                "Insufficient Data" %}N/A{% else %}{{ ov['Average_Sales_Growth_%'] }}%{% endif %}</h4>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Median Profit
+                                Growth</p>
+                            <h4 class="text-3xl font-bold text-slate-800">
+                                {% if ov['Average_Profit_Growth_%'] == "Insufficient Data" %}N/A{% else %}{{
+                                ov['Average_Profit_Growth_%'] }}%{% endif %}
+                            </h4>
                         </div>
                     </div>
                     <div class="bento-card bg-white p-5 flex items-center justify-between animate-card">
                         <div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Median Profit Growth</p>
-                            <h4 class="text-3xl font-bold text-slate-800">{% if ov['Average_Profit_Growth_%'] ==
-                                "Insufficient Data" %}N/A{% else %}{{ ov['Average_Profit_Growth_%'] }}%{% endif %}</h4>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Ventures
+                            </p>
+                            <h4 class="text-3xl font-bold text-slate-800">{{ ov.Total_Ventures }}</h4>
                         </div>
                     </div>
                 </div>
@@ -693,7 +760,8 @@
                     <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Sales Over Time</h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Sales Over
+                                    Time</h4>
                             </div>
                             <select onchange="updateOverallChart('sales', this.value)"
                                 class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
@@ -708,7 +776,8 @@
                     <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Profit Over Time</h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Profit Over
+                                    Time</h4>
                             </div>
                             <select onchange="updateOverallChart('profit', this.value)"
                                 class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
@@ -735,12 +804,6 @@
                                         Ventures</th>
                                     <th
                                         class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                        Total Sales</th>
-                                    <th
-                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
-                                        Total Profit</th>
-                                    <th
-                                        class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
                                         Sales Growth</th>
                                     <th
                                         class="px-6 py-4 text-right font-bold text-slate-500 uppercase text-xs tracking-wider">
@@ -752,11 +815,6 @@
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="px-6 py-4 font-semibold text-slate-900">{{ c.Cohort }}</td>
                                     <td class="px-6 py-4 font-semibold text-slate-600">{{ c.Ventures }}</td>
-                                    <td class="px-6 py-4 text-right font-mono font-semibold text-slate-800">R {{
-                                        "{:,.0f}".format(c['Total Sales']) }}</td>
-                                    <td
-                                        class="px-6 py-4 text-right font-mono font-semibold {% if c['Total Profit'] >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
-                                        R {{ "{:,.0f}".format(c['Total Profit']) }}</td>
                                     {% set sg = c['Median Sales Growth'] %}
                                     <td
                                         class="px-6 py-4 text-right font-mono font-semibold {% if sg == 'Insufficient Data' %}text-slate-400{% elif sg >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">
@@ -789,17 +847,22 @@
                     <div class="bento-card bg-white p-4 text-center">
                         <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Total Jobs</p>
                         {% set tj = js['Total Jobs'] %}
-                        <p class="text-2xl font-bold text-slate-800 mt-1" id="overall-jobs-val">{{ "{:,}".format(tj) }}</p>
+                        <p class="text-2xl font-bold text-slate-800 mt-1" id="overall-jobs-val">{{ "{:,}".format(tj) }}
+                        </p>
                     </div>
                     <div class="bento-card bg-white p-4 text-center">
                         <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">New Jobs</p>
                         {% set nj = js['New Jobs'] %}
-                        <p class="text-2xl font-bold {% if nj >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">{{ "{:+,}".format(nj) }}</p>
+                        <p
+                            class="text-2xl font-bold {% if nj >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
+                            {{ "{:+,}".format(nj) }}</p>
                     </div>
                     <div class="bento-card bg-white p-4 text-center">
                         <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">% Change</p>
                         {% set pc = js['Jobs Pct Change'] %}
-                        <p class="text-2xl font-bold {% if pc >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">{{ pc }}%</p>
+                        <p
+                            class="text-2xl font-bold {% if pc >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %} mt-1">
+                            {{ pc }}%</p>
                     </div>
                     <div class="bento-card bg-white p-4 text-center">
                         <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Female Jobs</p>
@@ -813,7 +876,8 @@
                     </div>
                     <div class="bento-card bg-white p-4 text-center">
                         <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">New Female</p>
-                        <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Female Jobs']) }}</p>
+                        <p class="text-2xl font-bold text-injiniBlue mt-1">{{ "{:+,}".format(js['New Female Jobs']) }}
+                        </p>
                     </div>
                 </div>
 
@@ -821,7 +885,8 @@
                 <div class="bento-card bg-white p-6 mb-6 flex flex-col">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Jobs Over Time</h4>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Jobs Over Time
+                            </h4>
                         </div>
                         <select onchange="updateOverallChart('jobs', this.value)"
                             class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
@@ -886,17 +951,20 @@
                     <div class="bento-card bg-white p-5 text-center">
                         <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Total Subscribers</p>
                         {% set ts = rs['Total Subscribers'] %}
-                        <p class="text-3xl font-bold text-slate-800 mt-1" id="overall-subs-val">{{ "{:,}".format(ts) }}</p>
+                        <p class="text-3xl font-bold text-slate-800 mt-1" id="overall-subs-val">{{ "{:,}".format(ts) }}
+                        </p>
                     </div>
                     <div class="bento-card bg-white p-5 text-center">
                         <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">New Subscribers</p>
                         {% set ns = rs['New Subscribers'] %}
-                        <p class="text-3xl font-bold text-injiniGreen mt-1" id="overall-newsubs-val">{{ "{:,}".format(ns) }}</p>
+                        <p class="text-3xl font-bold text-injiniGreen mt-1" id="overall-newsubs-val">{{
+                            "{:,}".format(ns) }}</p>
                     </div>
                     <div class="bento-card bg-white p-5 text-center">
                         <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Total Schools</p>
                         {% set tsh = rs['Total Schools'] %}
-                        <p class="text-3xl font-bold text-injiniBlue mt-1" id="overall-schools-val">{{ "{:,}".format(tsh) }}</p>
+                        <p class="text-3xl font-bold text-injiniBlue mt-1" id="overall-schools-val">{{
+                            "{:,}".format(tsh) }}</p>
                     </div>
                 </div>
 
@@ -906,7 +974,8 @@
                     <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Subscribers</h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total
+                                    Subscribers</h4>
                             </div>
                             <select onchange="updateOverallChart('subs', this.value)"
                                 class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
@@ -921,7 +990,8 @@
                     <div class="bento-card bg-white p-6 flex flex-col">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">New Subscribers</h4>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">New
+                                    Subscribers</h4>
                             </div>
                             <select onchange="updateOverallChart('newsubs', this.value)"
                                 class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
@@ -937,7 +1007,8 @@
                 <div class="bento-card bg-white p-6 flex flex-col">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Schools & Learning Institutions</h4>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Schools &
+                                Learning Institutions</h4>
                         </div>
                         <select onchange="updateOverallChart('schools', this.value)"
                             class="text-sm font-semibold bg-slate-50 border-0 rounded-lg text-slate-600 focus:ring-injiniBlue pb-1 pt-1 pl-3 pr-8 shadow-sm">
@@ -1004,8 +1075,7 @@
         <div class="fixed bottom-8 right-8 z-50">
             <button id="injini-ai-btn"
                 class="bg-white text-injiniBlue p-0 rounded-full shadow-2xl hover:scale-105 transition-transform duration-200 border-2 border-injiniGold w-16 h-16 flex items-center justify-center group overflow-hidden">
-                <img src="/static/logo.svg" alt="Injini AI" class="w-10 h-10 object-contain ml-1 mt-1"
-                    style="filter: brightness(0) saturate(100%) invert(11%) sepia(95%) saturate(6157%) hue-rotate(234deg) brightness(73%) contrast(131%);">
+                <img src="/static/logo.svg" alt="Injini AI" class="w-10 h-10 object-contain ml-1 mt-1">
                 <span class="absolute -top-2 -right-2 w-5 h-5 bg-injiniRed rounded-full animate-ping"></span>
             </button>
         </div>
@@ -1119,26 +1189,32 @@
                 if (filterVal === 'total' && d.cohort_aggregate && d.cohort_aggregate.months.length) {
                     series.push({ name: 'Cohort Total', data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: d.cohort_aggregate.sales[i] })) });
                     series.push({ name: 'Sales Trend', data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: linearTrend(d.cohort_aggregate.sales)[i] })) });
-                    val = 'R ' + (d.cohort_aggregate.sales.at(-1) || 0).toLocaleString();
+                    // Fix: Return growth % instead of Rand value
+                    const g = d.cohort_median_sg;
+                    val = (typeof g === 'number') ? g + '%' : g;
                 } else if (d.fellows_sales) {
                     const f = d.fellows_sales.find(x => x.name === filterVal);
                     if (f) {
                         series.push({ name: f.name, data: f.data });
                         series.push({ name: 'Trend', data: f.data.map((pt, i) => ({ x: pt.x, y: linearTrend(f.data.map(p => p.y))[i] })) });
-                        val = 'R ' + (f.data.at(-1)?.y || 0).toLocaleString();
+                        // Fix: Return growth % instead of Rand value
+                        val = (typeof f.growth === 'number') ? f.growth + '%' : f.growth;
                     }
                 }
             } else if (type === 'profit') {
                 if (filterVal === 'total' && d.cohort_aggregate && d.cohort_aggregate.months.length) {
                     series.push({ name: 'Cohort Total', data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: d.cohort_aggregate.profit[i] })) });
                     series.push({ name: 'Profit Trend', data: d.cohort_aggregate.months.map((m, i) => ({ x: m, y: linearTrend(d.cohort_aggregate.profit)[i] })) });
-                    val = 'R ' + (d.cohort_aggregate.profit.at(-1) || 0).toLocaleString();
+                    // Fix: Return growth % instead of Rand value
+                    const g = d.cohort_median_pg;
+                    val = (typeof g === 'number') ? g + '%' : g;
                 } else if (d.fellows_profit) {
                     const f = d.fellows_profit.find(x => x.name === filterVal);
                     if (f) {
                         series.push({ name: f.name, data: f.data });
                         series.push({ name: 'Trend', data: f.data.map((pt, i) => ({ x: pt.x, y: linearTrend(f.data.map(p => p.y))[i] })) });
-                        val = 'R ' + (f.data.at(-1)?.y || 0).toLocaleString();
+                        // Fix: Return growth % instead of Rand value
+                        val = (typeof f.growth === 'number') ? f.growth + '%' : f.growth;
                     }
                 }
             } else if (type === 'jobs') {
@@ -1169,8 +1245,6 @@
                     series = [
                         { name: 'Total Learners', data: tl },
                         { name: 'Total Educators', data: te },
-                        { name: 'Community Learners', data: cl },
-                        { name: 'Community Educators', data: ce },
                     ];
                     val = ((tl.at(-1) || 0) + (te.at(-1) || 0)).toLocaleString();
                 } else if (d.fellows_reach) {
@@ -1179,8 +1253,6 @@
                         series = [
                             { name: 'Total Learners', data: f.total_learners },
                             { name: 'Total Educators', data: f.total_educators },
-                            { name: 'Community Learners', data: f.community_learners },
-                            { name: 'Community Educators', data: f.community_educators },
                         ];
                         val = ((f.total_learners.at(-1) || 0) + (f.total_educators.at(-1) || 0)).toLocaleString();
                     }
@@ -1205,6 +1277,7 @@
             } else if (type === 'schools') {
                 if (filterVal === 'total' && d.reach && d.reach.months.length) {
                     series = [
+                        { name: 'Total Schools', data: d.reach.sa_schools.map((v, i) => v + d.reach.q13_schools[i]) },
                         { name: 'SA Schools', data: d.reach.sa_schools },
                         { name: 'Q1-3 Schools', data: d.reach.q13_schools },
                     ];
@@ -1213,6 +1286,7 @@
                     const f = d.fellows_reach.find(x => x.name === filterVal);
                     if (f) {
                         series = [
+                            { name: 'Total Schools', data: f.sa_schools.map((v, i) => v + f.q13_schools[i]) },
                             { name: 'SA Schools', data: f.sa_schools },
                             { name: 'Q1-3 Schools', data: f.q13_schools },
                         ];
@@ -1233,10 +1307,14 @@
                 chart: { type: 'line', height: 280, ...chartDefaults },
                 series: seriesData,
                 stroke: { width: [3, 2], curve: 'smooth', dashArray: [0, 8] },
-                colors: type === 'profit' ? ['#008a40', '#9ca3af'] : ['#001c94', '#9ca3af'],
+                colors: type === 'profit' ? ['#008a40', '#ef4444'] : ['#001c94', '#93c5fd'],
                 xaxis: { type: 'datetime', labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
                 yaxis: { labels: { formatter: v => 'R ' + (v / 1000).toFixed(0) + 'k' } },
-                tooltip: { y: { formatter: v => 'R ' + v.toLocaleString() } },
+                tooltip: {
+                    shared: true,
+                    intersect: false,
+                    y: { formatter: v => 'R ' + v.toLocaleString() }
+                },
                 legend: { position: 'top', fontSize: '11px' },
                 grid: { borderColor: '#f1f5f9' },
             });
@@ -1288,8 +1366,6 @@
                     series: [
                         { name: 'Total Learners', data: d.reach.total_learners },
                         { name: 'Total Educators', data: d.reach.total_educators },
-                        { name: 'Community Learners', data: d.reach.community_learners },
-                        { name: 'Community Educators', data: d.reach.community_educators }
                     ],
                     colors: ['#001c94', '#008a40', '#ec4899', '#ffd100'],
                     stroke: { width: 2.5, curve: 'smooth' },
@@ -1325,10 +1401,11 @@
                 renderedCharts[cohortKey + '-schools'] = new ApexCharts(document.querySelector('#schools-c' + cnum), {
                     chart: { type: 'line', height: 280, ...chartDefaults },
                     series: [
+                        { name: 'Total Schools', data: d.reach.sa_schools.map((v, i) => v + d.reach.q13_schools[i]) },
                         { name: 'SA Schools', data: d.reach.sa_schools },
                         { name: 'Q1-3 Schools', data: d.reach.q13_schools },
                     ],
-                    colors: ['#001c94', '#ffd100'],
+                    colors: ['#001c94', '#008a40', '#ffd100'],
                     stroke: { width: 2.5, curve: 'smooth' },
                     markers: { size: 4 },
                     xaxis: { type: 'datetime', categories: d.reach.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
@@ -1364,7 +1441,7 @@
                         return;
                     }
                 } else if ((type === 'subs' || type === 'newsubs' || type === 'schools' || type === 'jobs') && filterVal === 'total') {
-                    const months = (type === 'jobs') ? d.jobs_bar.months : d.reach.months;
+                    const months = (type === 'jobs') ? d.jobs_bar.months : (d.reach ? d.reach.months : []);
                     renderedCharts[chartKey].updateOptions({
                         xaxis: { categories: months },
                         series: updated.series,
@@ -1377,63 +1454,86 @@
 
         // ─── OVERALL CHARTS ───
         function getOverallChartSeriesAndVal(type, filterVal) {
-            let d;
             let val = '0';
+            let series = [];
+            let allMonths = [];
 
             if (filterVal === 'total') {
-                d = tsData.program_extended;
+                if (type === 'sales' || type === 'profit') {
+                    ['Cohort 1', 'Cohort 2', 'Cohort 3', 'Cohort 4'].forEach(cKey => {
+                        const cdObj = cohortData[cKey];
+                        if (cdObj && cdObj.cohort_aggregate && cdObj.cohort_aggregate.months.length) {
+                            const dataArr = (type === 'sales') ? cdObj.cohort_aggregate.sales : cdObj.cohort_aggregate.profit;
+                            series.push({ name: cKey, data: dataArr.map((v, i) => ({ x: i + 1, y: v })) });
+                            if (dataArr.length > allMonths.length) {
+                                allMonths = Array.from({ length: dataArr.length }, (_, i) => i + 1);
+                            }
+                        }
+                    });
+                    const prog = tsData.program_extended;
+                    const progVal = (type === 'sales') ? prog.sales.at(-1) || 0 : prog.profit.at(-1) || 0;
+                    val = 'R ' + progVal.toLocaleString();
+                } else {
+                    const d = tsData.program_extended;
+                    if (type === 'jobs') {
+                        series.push({ name: 'Total Jobs', data: d.jobs_total.map((v, i) => ({ x: i + 1, y: v })) });
+                        series.push({ name: 'Female Jobs', data: d.jobs_female.map((v, i) => ({ x: i + 1, y: v })) });
+                        series.push({ name: 'Youth Jobs', data: d.jobs_youth.map((v, i) => ({ x: i + 1, y: v })) });
+                        val = (d.jobs_total.at(-1) || 0).toLocaleString();
+                    } else if (type === 'subs') {
+                        series.push({ name: 'Total Learners', data: d.reach_learners.map((v, i) => ({ x: i + 1, y: v })) });
+                        series.push({ name: 'Total Educators', data: d.reach_educators.map((v, i) => ({ x: i + 1, y: v })) });
+                        val = ((d.reach_learners.at(-1) || 0) + (d.reach_educators.at(-1) || 0)).toLocaleString();
+                    } else if (type === 'newsubs') {
+                        series.push({ name: 'New Learners (Cum)', data: d.reach_new_learners_cum.map((v, i) => ({ x: i + 1, y: v })) });
+                        series.push({ name: 'New Educators (Cum)', data: d.reach_new_educators_cum.map((v, i) => ({ x: i + 1, y: v })) });
+                        val = ((d.reach_new_learners_cum.at(-1) || 0) + (d.reach_new_educators_cum.at(-1) || 0)).toLocaleString();
+                    } else if (type === 'schools') {
+                        series.push({ name: 'Total Schools', data: d.reach_sa_schools.map((v, i) => ({ x: i + 1, y: v + d.reach_q13_schools[i] })) });
+                        series.push({ name: 'SA Schools', data: d.reach_sa_schools.map((v, i) => ({ x: i + 1, y: v })) });
+                        series.push({ name: 'Q1-3 Schools', data: d.reach_q13_schools.map((v, i) => ({ x: i + 1, y: v })) });
+                        val = ((d.reach_sa_schools.at(-1) || 0) + (d.reach_q13_schools.at(-1) || 0)).toLocaleString();
+                    }
+                    allMonths = Array.from({ length: d.months.length }, (_, i) => i + 1);
+                }
             } else {
                 const cdObj = cohortData[filterVal];
-                if (!cdObj) return { series: [], val: '0' };
-                d = {
-                    months: cdObj.cohort_aggregate.months,
-                    sales: cdObj.cohort_aggregate.sales,
-                    profit: cdObj.cohort_aggregate.profit,
-                    jobs_total: cdObj.jobs_bar?.total || [],
-                    jobs_female: cdObj.jobs_bar?.female || [],
-                    jobs_youth: cdObj.jobs_bar?.youth || [],
-                    reach_learners: cdObj.reach?.total_learners || [],
-                    reach_educators: cdObj.reach?.total_educators || [],
-                    reach_new_learners_cum: cdObj.reach?.new_learners_cum || [],
-                    reach_new_educators_cum: cdObj.reach?.new_educators_cum || [],
-                    reach_sa_schools: cdObj.reach?.sa_schools || [],
-                    reach_q13_schools: cdObj.reach?.q13_schools || []
-                };
+                if (cdObj) {
+                    let d;
+                    if (type === 'jobs') {
+                        d = cdObj.jobs_bar;
+                        series.push({ name: 'Total Jobs', data: d.total.map((v, i) => ({ x: i + 1, y: v })) });
+                        series.push({ name: 'Female Jobs', data: d.female.map((v, i) => ({ x: i + 1, y: v })) });
+                        series.push({ name: 'Youth Jobs', data: d.youth.map((v, i) => ({ x: i + 1, y: v })) });
+                        val = (d.total.at(-1) || 0).toLocaleString();
+                        allMonths = Array.from({ length: d.months.length }, (_, i) => i + 1);
+                    } else if (type === 'subs' || type === 'newsubs' || type === 'schools') {
+                        d = cdObj.reach;
+                        if (type === 'subs') {
+                            series.push({ name: 'Total Learners', data: d.total_learners.map((v, i) => ({ x: i + 1, y: v })) });
+                            series.push({ name: 'Total Educators', data: d.total_educators.map((v, i) => ({ x: i + 1, y: v })) });
+                            val = ((d.total_learners.at(-1) || 0) + (d.total_educators.at(-1) || 0)).toLocaleString();
+                        } else if (type === 'newsubs') {
+                            series.push({ name: 'New Learners (Cum)', data: d.new_learners_cum.map((v, i) => ({ x: i + 1, y: v })) });
+                            series.push({ name: 'New Educators (Cum)', data: d.new_educators_cum.map((v, i) => ({ x: i + 1, y: v })) });
+                            val = ((d.new_learners_cum.at(-1) || 0) + (d.new_educators_cum.at(-1) || 0)).toLocaleString();
+                        } else if (type === 'schools') {
+                            series.push({ name: 'Total Schools', data: d.sa_schools.map((v, i) => ({ x: i + 1, y: v + d.q13_schools[i] })) });
+                            series.push({ name: 'SA Schools', data: d.sa_schools.map((v, i) => ({ x: i + 1, y: v })) });
+                            series.push({ name: 'Q1-3 Schools', data: d.q13_schools.map((v, i) => ({ x: i + 1, y: v })) });
+                            val = ((d.sa_schools.at(-1) || 0) + (d.q13_schools.at(-1) || 0)).toLocaleString();
+                        }
+                        allMonths = Array.from({ length: d.months.length }, (_, i) => i + 1);
+                    } else {
+                        // sales or profit
+                        const dataArr = (type === 'sales') ? cdObj.cohort_aggregate.sales : cdObj.cohort_aggregate.profit;
+                        series.push({ name: filterVal, data: dataArr.map((v, i) => ({ x: i + 1, y: v })) });
+                        allMonths = Array.from({ length: dataArr.length }, (_, i) => i + 1);
+                        val = 'R ' + (dataArr.at(-1) || 0).toLocaleString();
+                    }
+                }
             }
-
-            if (!d || !d.months || !d.months.length) return { series: [], val: '0' };
-
-            let series = [];
-            const pts = (dataArr) => d.months.map((m, i) => ({ x: m, y: Math.round(dataArr[i]) }));
-
-            if (type === 'sales') {
-                series.push({ name: filterVal === 'total' ? 'Program Total' : filterVal, data: pts(d.sales) });
-                series.push({ name: 'Trend', data: pts(linearTrend(d.sales)) });
-                val = 'R ' + (d.sales.at(-1) || 0).toLocaleString();
-            } else if (type === 'profit') {
-                series.push({ name: filterVal === 'total' ? 'Program Total' : filterVal, data: pts(d.profit) });
-                series.push({ name: 'Trend', data: pts(linearTrend(d.profit)) });
-                val = 'R ' + (d.profit.at(-1) || 0).toLocaleString();
-            } else if (type === 'jobs') {
-                series.push({ name: 'Total Jobs', data: d.jobs_total });
-                series.push({ name: 'Female Jobs', data: d.jobs_female });
-                series.push({ name: 'Youth Jobs', data: d.jobs_youth });
-                val = (d.jobs_total.at(-1) || 0).toLocaleString();
-            } else if (type === 'subs') {
-                series.push({ name: 'Total Learners', data: d.reach_learners });
-                series.push({ name: 'Total Educators', data: d.reach_educators });
-                val = ((d.reach_learners.at(-1) || 0) + (d.reach_educators.at(-1) || 0)).toLocaleString();
-            } else if (type === 'newsubs') {
-                series.push({ name: 'New Learners (Cum)', data: d.reach_new_learners_cum });
-                series.push({ name: 'New Educators (Cum)', data: d.reach_new_educators_cum });
-                val = ((d.reach_new_learners_cum.at(-1) || 0) + (d.reach_new_educators_cum.at(-1) || 0)).toLocaleString();
-            } else if (type === 'schools') {
-                series.push({ name: 'SA Schools', data: d.reach_sa_schools });
-                series.push({ name: 'Q1-3 Schools', data: d.reach_q13_schools });
-                val = ((d.reach_sa_schools.at(-1) || 0) + (d.reach_q13_schools.at(-1) || 0)).toLocaleString();
-            }
-
-            return { series, val, months: d.months };
+            return { series, val, months: allMonths };
         }
 
         function updateOverallChart(type, filterVal) {
@@ -1448,9 +1548,6 @@
             if (domMap[type]) updateMetricDOM(domMap[type], data.val);
 
             if (renderedCharts['overall-' + type]) {
-                if (['jobs', 'subs', 'newsubs', 'schools'].includes(type)) {
-                    renderedCharts['overall-' + type].updateOptions({ xaxis: { categories: data.months } });
-                }
                 renderedCharts['overall-' + type].updateSeries(data.series);
             }
         }
@@ -1461,11 +1558,16 @@
             const lineOpts = (type, seriesData) => ({
                 chart: { type: 'line', height: 280, ...chartDefaults },
                 series: seriesData,
-                stroke: { width: [3.5, 2], curve: 'smooth', dashArray: [0, 8] },
-                colors: type === 'profit' ? ['#008a40', '#9ca3af'] : ['#001c94', '#9ca3af'],
-                xaxis: { type: 'datetime', labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
+                stroke: { width: 3, curve: 'smooth' },
+                colors: ['#001c94', '#008a40', '#ec4899', '#ffd100', '#94a3b8'],
+                xaxis: {
+                    type: 'numeric',
+                    tickAmount: 10,
+                    labels: { formatter: v => 'Month ' + Math.round(v), style: { fontSize: '10px' } },
+                    title: { text: 'Months Since Cohort Start', style: { fontSize: '10px', color: '#94a3b8' } }
+                },
                 yaxis: { labels: { formatter: v => 'R ' + (v / 1000).toFixed(0) + 'k' } },
-                tooltip: { y: { formatter: v => 'R ' + v.toLocaleString() } },
+                tooltip: { shared: true, intersect: false, y: { formatter: v => 'R ' + v.toLocaleString() } },
                 legend: { position: 'top', fontSize: '11px' },
                 grid: { borderColor: '#f1f5f9' },
             });
@@ -1488,12 +1590,16 @@
             const jData = getOverallChartSeriesAndVal('jobs', 'total');
             if (jData.series.length) {
                 renderedCharts['overall-jobs'] = new ApexCharts(document.querySelector('#overall-jobs-chart'), {
-                    chart: { type: 'bar', height: 280, ...chartDefaults },
+                    chart: { type: 'bar', height: 280, stacked: false, ...chartDefaults },
                     series: jData.series,
                     colors: ['#001c94', '#ec4899', '#ffd100'],
                     plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
-                    xaxis: { type: 'datetime', categories: jData.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
+                    xaxis: {
+                        type: 'numeric',
+                        labels: { formatter: v => 'Month ' + Math.round(v), style: { fontSize: '10px' } }
+                    },
                     yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                    tooltip: { shared: true, intersect: false, y: { formatter: v => v.toLocaleString() } },
                     legend: { position: 'top', fontSize: '11px' },
                     grid: { borderColor: '#f1f5f9' },
                 });
@@ -1508,8 +1614,12 @@
                     series: rData.series,
                     colors: ['#001c94', '#008a40'],
                     stroke: { width: 2.5, curve: 'smooth' },
-                    xaxis: { type: 'datetime', categories: rData.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
+                    xaxis: {
+                        type: 'numeric',
+                        labels: { formatter: v => 'Month ' + Math.round(v), style: { fontSize: '10px' } }
+                    },
                     yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                    tooltip: { shared: true, intersect: false, y: { formatter: v => v.toLocaleString() } },
                     legend: { position: 'top', fontSize: '11px' },
                     grid: { borderColor: '#f1f5f9' },
                 });
@@ -1525,8 +1635,12 @@
                     colors: ['#001c94', '#008a40'],
                     stroke: { width: 2, curve: 'smooth' },
                     fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.1 } },
-                    xaxis: { type: 'datetime', categories: nData.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
+                    xaxis: {
+                        type: 'numeric',
+                        labels: { formatter: v => 'Month ' + Math.round(v), style: { fontSize: '10px' } }
+                    },
                     yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                    tooltip: { shared: true, intersect: false, y: { formatter: v => v.toLocaleString() } },
                     legend: { position: 'top', fontSize: '11px' },
                     grid: { borderColor: '#f1f5f9' },
                 });
@@ -1539,11 +1653,15 @@
                 renderedCharts['overall-schools'] = new ApexCharts(document.querySelector('#overall-schools-chart'), {
                     chart: { type: 'line', height: 280, ...chartDefaults },
                     series: scData.series,
-                    colors: ['#001c94', '#ffd100'],
+                    colors: ['#001c94', '#008a40', '#ffd100'],
                     stroke: { width: 2.5, curve: 'smooth' },
                     markers: { size: 4 },
-                    xaxis: { type: 'datetime', categories: scData.months, labels: { datetimeUTC: false, format: 'MMM yy', style: { fontSize: '10px' } } },
+                    xaxis: {
+                        type: 'numeric',
+                        labels: { formatter: v => 'Month ' + Math.round(v), style: { fontSize: '10px' } }
+                    },
                     yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                    tooltip: { shared: true, intersect: false, y: { formatter: v => v.toLocaleString() } },
                     legend: { position: 'top', fontSize: '11px' },
                     grid: { borderColor: '#f1f5f9' },
                 });

@@ -107,11 +107,27 @@ def calculate_kpis(df):
     # Create a proper date column for sorting
     df['Date'] = df['Reporting Month'].apply(parse_reporting_month)
 
+    # --- FILTER OUT UNKNOWN BUSINESSES ---
+    df = df[df['Business Name'] != 'Unknown'].copy()
+
+    # --- ADD MONTH INDEX (Months since start) ---
+    def add_month_index(group):
+        group = group.sort_values('Date')
+        if not group.empty and group['Date'].notna().any():
+            start_date = group['Date'].min()
+            group['Month_Index'] = group['Date'].apply(lambda x: (x.year - start_date.year) * 12 + (x.month - start_date.month) + 1 if pd.notna(x) else 0)
+        else:
+            group['Month_Index'] = 0
+        return group
+
+    df = df.groupby('Business Name', group_keys=False).apply(add_month_index)
+
     # ─── Program Level Time Series (Aggregating ALL businesses globally) ───
     program_series = {}
     valid_global = df[df['Date'].notna()].copy()
     if not valid_global.empty:
-        prog_monthly = valid_global.groupby(valid_global['Date'].dt.strftime('%Y-%m')).agg({
+        # Group by Month_Index for normalized comparison
+        prog_monthly = valid_global.groupby('Month_Index').agg({
             'Monthly Sales (R)': 'sum',
             'Monthly Net Profit': 'sum',
             'Total Jobs': 'sum',
@@ -128,7 +144,7 @@ def calculate_kpis(df):
         }).sort_index()
 
         program_series = {
-            'months': prog_monthly.index.tolist(),
+            'months': [int(m) for m in prog_monthly.index.tolist()],
             'sales': [round(float(v)) for v in prog_monthly['Monthly Sales (R)'].tolist()],
             'profit': [round(float(v)) for v in prog_monthly['Monthly Net Profit'].tolist()],
             'jobs_total': [round(float(v)) for v in prog_monthly['Total Jobs'].tolist()],
@@ -214,8 +230,9 @@ def calculate_kpis(df):
         new_youth_jobs = int(current_youth_jobs - first_youth_jobs) if n >= 2 else 0
 
         if n >= 2:
-            prev_jobs = float(group.iloc[-2]['Total Jobs'])
-            jobs_pct_change = round(((last_jobs - prev_jobs) / prev_jobs) * 100, 1) if prev_jobs != 0 else 0.0
+            first_jobs_val = float(group.iloc[0]['Total Jobs'])
+            # Fix: Comparison should be Baseline to Current as per client request
+            jobs_pct_change = round(((last_jobs - first_jobs_val) / first_jobs_val) * 100, 1) if first_jobs_val != 0 else 0.0
         else:
             jobs_pct_change = 0.0
 
@@ -462,10 +479,14 @@ def calculate_kpis(df):
             profit = [round(float(v)) for v in biz_sorted['Monthly Net Profit'].tolist()]
             fellows_sales.append({
                 'name': biz_name,
+                'growth': sg, # Added for header display
+                'months': len(biz_sorted),
                 'data': [{'x': m, 'y': s} for m, s in zip(months, sales)]
             })
             fellows_profit.append({
                 'name': biz_name,
+                'growth': pg, # Added for header display
+                'months': len(biz_sorted),
                 'data': [{'x': m, 'y': p} for m, p in zip(months, profit)]
             })
 
@@ -691,6 +712,9 @@ def calculate_kpis(df):
             cohort_aggregate = {'months': [], 'sales': [], 'profit': []}
 
         cohort_detail[cohort_name] = {
+            'cohort_median_sg': cohort_median_sg,
+            'cohort_median_pg': cohort_median_pg,
+            'cohort_months': int(avg_months),
             'fellows_sales': fellows_sales,
             'fellows_profit': fellows_profit,
             'fellows_reach': fellows_reach,
@@ -707,10 +731,11 @@ def calculate_kpis(df):
 
     result = {
         'Program_Overview': {
-            'Total_Sales_ZAR': grand_total_sales,
+            'Total_Sales_ZAR': int(grand_total_sales),
             'Net_Jobs_Created': int(total_net_jobs),
             'Average_Sales_Growth_%': avg_sales_growth,
             'Average_Profit_Growth_%': avg_profit_growth,
+            'Total_Ventures': int(df['Business Name'].nunique()),
             'Program_TWA': program_twa,
         },
         'Venture_Data': venture_data,
