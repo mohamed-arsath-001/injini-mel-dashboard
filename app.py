@@ -1,3 +1,12 @@
+"""
+app.py  --  Injini MEL Dashboard  (Phase 2)
+============================================
+Key changes vs V1:
+  * _safe_json() escapes </ in JSON strings before embedding in <script>
+    tags via Jinja | safe -- eliminates "Unexpected token '{'" browser error.
+  * render.yaml GROQ_API_KEY env var added (see render.yaml).
+"""
+
 import os
 import io
 import csv
@@ -6,16 +15,16 @@ import time
 from flask import Flask, render_template, Response, request, jsonify
 from dotenv import load_dotenv
 from groq import Groq
- 
+
 from data_fetcher import fetch_dashboard_data
 from logic_engine import calculate_kpis
- 
+
 load_dotenv(override=True)
- 
+
 app = Flask(__name__)
 groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
- 
- 
+
+
 # ---------------------------------------------------------------------------
 # JSON safety helper
 # ---------------------------------------------------------------------------
@@ -32,15 +41,15 @@ def _safe_json(data) -> str:
     # Also escape HTML comment openers inside strings
     raw = raw.replace('<!--', '<\\!--')
     return raw
- 
- 
+
+
 # ---------------------------------------------------------------------------
 # Data cache (5-minute TTL)
 # ---------------------------------------------------------------------------
 _cache: dict = {'data': None, 'ts': 0}
 CACHE_TTL = 300  # seconds
- 
- 
+
+
 def get_dashboard_data():
     now = time.time()
     if _cache['data'] is None or (now - _cache['ts']) > CACHE_TTL:
@@ -49,8 +58,8 @@ def get_dashboard_data():
         _cache['data'] = (raw_df, kpi_data)
         _cache['ts'] = now
     return _cache['data']
- 
- 
+
+
 # ---------------------------------------------------------------------------
 # DotDict helper
 # ---------------------------------------------------------------------------
@@ -60,29 +69,29 @@ class DotDict(dict):
             return self[key]
         except KeyError:
             raise AttributeError(key)
- 
- 
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 @app.route('/health')
 def health():
     return 'ok', 200
- 
- 
+
+
 @app.route('/')
 def dashboard():
     raw_df, kpi_data = get_dashboard_data()
- 
+
     kpis_for_template = DotDict(
         Program_Overview=DotDict(kpi_data['Program_Overview']),
         Venture_Data=kpi_data['Venture_Data'],
     )
- 
+
     # FIX: Use _safe_json() not json.dumps() -- prevents Unexpected token '{'
     time_series_json   = _safe_json(kpi_data['Time_Series'])
     cohort_detail_json = _safe_json(kpi_data['Cohort_Detail'])
- 
+
     return render_template(
         'dashboard.html',
         kpis=kpis_for_template,
@@ -95,15 +104,15 @@ def dashboard():
         cohort_detail=kpi_data['Cohort_Detail'],
         cohort_detail_json=cohort_detail_json,
     )
- 
- 
+
+
 @app.route('/api/chat', methods=['POST'])
 def chat_with_data():
     try:
         data = request.json
         user_message = data.get('message', '')
         raw_df, kpi_data = get_dashboard_data()
- 
+
         context = {
             'Program_Overview':  kpi_data['Program_Overview'],
             'Cohort_Summaries':  kpi_data['Cohort_Summaries'],
@@ -114,7 +123,7 @@ def chat_with_data():
                 for v in kpi_data['Venture_Data']
             ],
         }
- 
+
         system_prompt = (
             "Act as 'Injini AI', a helpful data assistant for the Injini EdTech accelerator. "
             "Answer the user's question based strictly on the data provided. "
@@ -126,7 +135,7 @@ def chat_with_data():
             f"Context Data:\n{json.dumps(context, indent=2, default=str)}\n\n"
             f"User Question: {user_message}"
         )
- 
+
         models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
         for model in models:
             try:
@@ -145,16 +154,16 @@ def chat_with_data():
                     time.sleep(2)
                     continue
                 raise
- 
+
         return jsonify({'response': "I'm currently at capacity. Please wait a moment and try again."})
- 
+
     except Exception as e:
         print(f"Chat error: {e}")
         if '429' in str(e) or 'rate_limit' in str(e).lower():
             return jsonify({'response': "I'm currently at capacity. Please wait about 60 seconds."})
         return jsonify({'response': "I'm having trouble connecting right now."}), 500
- 
- 
+
+
 @app.route('/export')
 def export_csv():
     raw_df, kpi_data = get_dashboard_data()
@@ -180,7 +189,7 @@ def export_csv():
     response = Response(output.getvalue(), mimetype='text/csv')
     response.headers['Content-Disposition'] = 'attachment; filename=injini_mel_report.csv'
     return response
- 
- 
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
