@@ -1,240 +1,186 @@
 import os
-import pandas as pd
-from pyairtable import Api
+import io
+import csv
+import json
+import time
+from flask import Flask, render_template, Response, request, jsonify
 from dotenv import load_dotenv
-
-# Load secrets from your .env file
+from groq import Groq
+ 
+from data_fetcher import fetch_dashboard_data
+from logic_engine import calculate_kpis
+ 
 load_dotenv(override=True)
-
-# Initialize Airtable API
-api_key = os.getenv('AIRTABLE_PAT')
-api = Api(api_key)
-
-# The exact Base IDs from your Airtable links
-BASE_IDS = {
-    'Cohort 1': 'app5MKMARnZAInXVJ',
-    'Cohort 2': 'app3KJMspt7z8qy9M',
-    'Cohort 3': 'appBhlIJDu8JvaWxB',
-    'Cohort 4': 'appzHpcS4aenhjZ8V'
-}
-
-def fetch_dashboard_data():
-    all_data = []
-    
-    for cohort, base_id in BASE_IDS.items():
-        print(f"Fetching data for {cohort}...")
+ 
+app = Flask(__name__)
+groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+ 
+ 
+# ---------------------------------------------------------------------------
+# JSON safety helper
+# ---------------------------------------------------------------------------
+def _safe_json(data) -> str:
+    """
+    Serialise data to JSON and escape sequences that would prematurely close
+    a <script> tag in the browser (</ --> <\/).
+    Without this, business names or text fields containing '</' break the
+    entire JS block with "Unexpected token '{'".
+    """
+    raw = json.dumps(data, default=str)
+    # Escape forward-slash after '<' so the browser never sees '</script>'
+    raw = raw.replace('</', '<\\/')
+    # Also escape HTML comment openers inside strings
+    raw = raw.replace('<!--', '<\\!--')
+    return raw
+ 
+ 
+# ---------------------------------------------------------------------------
+# Data cache (5-minute TTL)
+# ---------------------------------------------------------------------------
+_cache: dict = {'data': None, 'ts': 0}
+CACHE_TTL = 300  # seconds
+ 
+ 
+def get_dashboard_data():
+    now = time.time()
+    if _cache['data'] is None or (now - _cache['ts']) > CACHE_TTL:
+        raw_df = fetch_dashboard_data()
+        kpi_data = calculate_kpis(raw_df)
+        _cache['data'] = (raw_df, kpi_data)
+        _cache['ts'] = now
+    return _cache['data']
+ 
+ 
+# ---------------------------------------------------------------------------
+# DotDict helper
+# ---------------------------------------------------------------------------
+class DotDict(dict):
+    def __getattr__(self, key):
         try:
-            table = api.table(base_id, 'Monthly reporting')
-            records = table.all()
-
-            for record in records:
-                fields = record['fields']
-                
-                # Helper: find field value from multiple possible names
-                # Strip whitespace from Airtable keys to handle trailing spaces
-                stripped_fields = {k.strip(): v for k, v in fields.items()}
-                def get_field(field_list):
-                    for name in field_list:
-                        if name.strip() in stripped_fields:
-                            return stripped_fields[name.strip()]
-                    return None
-
-                # --- Business Identity ---
-                business_name = get_field(['Business name', 'Company name']) or 'Unknown'
-                if isinstance(business_name, list):
-                    business_name = business_name[0]
-                reporting_month = get_field(['Reporting month', 'Reporting Month']) or 'Unknown'
-
-                # --- Business Indicators ---
-                sales = get_field(['Monthly Sales', 'Monthly sales', '# Monthly sales']) or 0
-                net_profit = get_field(['Monthly net profit', 'Monthly Net Profit']) or 0
-
-                # --- Jobs ---
-                total_jobs = get_field([
-                    'Operational jobs - Total', 'Operational Jobs - Total',
-                    'Total operational jobs', 'Total Operational Jobs',
-                    'Total Jobs', 'Total jobs',
-                    'Operational jobs -Total', 'Operational Jobs -Total',
-                    'Total Operational jobs',
-                ]) or 0
-                female_jobs = get_field([
-                    'Operational jobs - female', 'Operational jobs - Female',
-                    'Operational Jobs - Female',
-                    'Female operational jobs', 'Female Operational Jobs',
-                    'Female Jobs', 'Female jobs',
-                ]) or 0
-                youth_jobs = get_field([
-                    'Youth operational jobs', 'Youth Operational Jobs',
-                    'Youth operational Jobs', 'Youth Jobs', 'Youth jobs',
-                ]) or 0
-                educ_jobs_total = get_field([
-                    'Educational resourcing jobs -Total',
-                    'Educational resourcing jobs - Total',
-                    'Total Educational resourcing jobs',
-                    'Total Educational Resourcing Jobs',
-                ]) or 0
-                educ_jobs_female = get_field([
-                    'Educational resourcing jobs - Female',
-                    'Educational Resourcing Jobs - Female',
-                    'Female educational resourcing Jobs',
-                    'Female Educational Resourcing Jobs',
-                ]) or 0
-
-                # Log if jobs are all zero (field name mismatch?)
-                if total_jobs == 0 and female_jobs == 0 and youth_jobs == 0:
-                    job_keys = [k for k in fields if 'job' in k.lower() or 'operat' in k.lower()]
-                    if job_keys:
-                        print(f"  [!] Jobs=0 for {business_name} but found fields: {job_keys}")
-
-                # --- Reach: Subscribers ---
-                total_subscribers_students = get_field([
-                    'Total Subscribers -Students', 'Total Subscribers - Students'
-                ]) or 0
-                total_subscribers_teachers = get_field([
-                    'Total Subscribers - Teachers', 'Total subscribers - Teachers'
-                ]) or 0
-                new_subscribers_students = get_field([
-                    'Net new monthly subscribers  - students',
-                    'Net new monthly subscribers - students',
-                    'New Monthly Subscribers - Students'
-                ]) or 0
-                new_subscribers_teachers = get_field([
-                    'Net new monthly subscribers  - Teachers',
-                    'Net new monthly subscribers - Teachers'
-                ]) or 0
-                
-                # --- Reach: Active Users ---
-                active_students = get_field([
-                    'Active users Students - Broad Definition',
-                    'Monthly Active users - Students'
-                ]) or 0
-                active_teachers = get_field([
-                    'Active users teachers - Broad Definition',
-                    'Monthly Active users - Teachers'
-                ]) or 0
-                # --- Reach: Community ---
-                community_learners = get_field([
-                    'Total community impact - Learners', 'Total Community Impact - Learners',
-                    'Community learners', 'Community Learners'
-                ]) or 0
-                community_educators = get_field([
-                    'Total community impact - Educators', 'Total Community Impact - Educators',
-                    'Community educators', 'Community Educators'
-                ]) or 0
-
-                # --- Reach: Demographics ---
-                female_students = get_field([
-                    'Subscribers - Female students', 'Subscribers - Female Students'
-                ]) or 0
-                female_teachers = get_field([
-                    'Subscribers - Female teachers', 'Subscribers - Female Teachers'
-                ]) or 0
-                rural_students = get_field([
-                    'Subscription - Rural Students'
-                ]) or 0
-                rural_teachers = get_field([
-                    'Subscription - Rural Teachers', 'Subscription - Rural teachers'
-                ]) or 0
-                disability_students = get_field([
-                    'Subscription - Students with disabilities'
-                ]) or 0
-                disability_teachers = get_field([
-                    'Subscribers - Teachers with disabilities'
-                ]) or 0
-
-                # --- Reach: Schools ---
-                q13_schools = get_field([
-                    'Subscription- Q1-3 Schools Students',
-                    'Subscription - Q1-3 schools'
-                ]) or 0
-                sa_schools = get_field(['Subscription - South African schools']) or 0
-                total_schools = get_field([
-                    'Total number of schools solution being tested in',
-                    'Total subscribers (Schools/learning institutions)'
-                ]) or (q13_schools + sa_schools)
-
-                # --- Investments ---
-                grants_value = get_field([
-                    'Rand value of grant/investment',
-                    'New grants and investments'
-                ]) or 0
-                grant_funder = get_field([
-                    'If yes, please specify from whom this grant/ investment was made.'
-                ]) or ''
-                income_statement = get_field(['Income statement', 'Income Statement', 'Income statement  ']) or ''
-
-                all_data.append({
-                    'Cohort': cohort,
-                    'Business Name': business_name,
-                    'Reporting Month': reporting_month,
-                    # Business
-                    'Monthly Sales (R)': sales,
-                    'Monthly Net Profit': net_profit,
-                    # Jobs
-                    'Total Jobs': total_jobs,
-                    'Female Jobs': female_jobs,
-                    'Youth Jobs': youth_jobs,
-                    'Educ Jobs Total': educ_jobs_total,
-                    'Educ Jobs Female': educ_jobs_female,
-                    # Subscribers
-                    'Total Subscribers Students': total_subscribers_students,
-                    'Total Subscribers Teachers': total_subscribers_teachers,
-                    'New Subscribers Students': new_subscribers_students,
-                    'New Subscribers Teachers': new_subscribers_teachers,
-                    # Community
-                    'Community Learners': community_learners,
-                    'Community Educators': community_educators,
-                    # Active Users
-                    'Active Students': active_students,
-                    'Active Teachers': active_teachers,
-                    # Demographics
-                    'Female Students': female_students,
-                    'Female Teachers': female_teachers,
-                    'Rural Students': rural_students,
-                    'Rural Teachers': rural_teachers,
-                    'Disability Students': disability_students,
-                    'Disability Teachers': disability_teachers,
-                    # Schools
-                    'Total Schools': total_schools,
-                    'SA Schools': sa_schools,
-                    'Q1-3 Schools': q13_schools,
-                    # Investments
-                    'Grants Value': grants_value,
-                    'Grant Funder': grant_funder,
-                    'Income Statement': income_statement,
-                })
-        except Exception as e:
-            import traceback
-            with open('data_fetcher_error.log', 'w', encoding='utf-8') as f:
-                traceback.print_exc(file=f)
-            print(f"Failed to fetch {cohort}. Check data_fetcher_error.log")
-    df = pd.DataFrame(all_data)
-    
-    # Numeric columns to clean
-    numeric_cols = [
-        'Monthly Sales (R)', 'Monthly Net Profit',
-        'Total Jobs', 'Female Jobs', 'Youth Jobs', 'Educ Jobs Total', 'Educ Jobs Female',
-        'Total Subscribers Students', 'Total Subscribers Teachers',
-        'New Subscribers Students', 'New Subscribers Teachers',
-        'Community Learners', 'Community Educators',
-        'Active Students', 'Active Teachers',
-        'Female Students', 'Female Teachers',
-        'Rural Students', 'Rural Teachers',
-        'Disability Students', 'Disability Teachers',
-        'Total Schools', 'SA Schools', 'Q1-3 Schools',
-        'Grants Value'
-    ]
-    for col in numeric_cols:
-        if col not in df.columns:
-            df[col] = 0
-        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-    
-    return df
-
+            return self[key]
+        except KeyError:
+            raise AttributeError(key)
+ 
+ 
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+@app.route('/health')
+def health():
+    return 'ok', 200
+ 
+ 
+@app.route('/')
+def dashboard():
+    raw_df, kpi_data = get_dashboard_data()
+ 
+    kpis_for_template = DotDict(
+        Program_Overview=DotDict(kpi_data['Program_Overview']),
+        Venture_Data=kpi_data['Venture_Data'],
+    )
+ 
+    # FIX: Use _safe_json() not json.dumps() -- prevents Unexpected token '{'
+    time_series_json   = _safe_json(kpi_data['Time_Series'])
+    cohort_detail_json = _safe_json(kpi_data['Cohort_Detail'])
+ 
+    return render_template(
+        'dashboard.html',
+        kpis=kpis_for_template,
+        cohort_summaries=kpi_data['Cohort_Summaries'],
+        investment_ledger=kpi_data['Investment_Ledger'],
+        jobs_summary=kpi_data['Jobs_Summary'],
+        reach_summary=kpi_data['Reach_Summary'],
+        time_series_json=time_series_json,
+        red_flags=kpi_data['Red_Flags'],
+        cohort_detail=kpi_data['Cohort_Detail'],
+        cohort_detail_json=cohort_detail_json,
+    )
+ 
+ 
+@app.route('/api/chat', methods=['POST'])
+def chat_with_data():
+    try:
+        data = request.json
+        user_message = data.get('message', '')
+        raw_df, kpi_data = get_dashboard_data()
+ 
+        context = {
+            'Program_Overview':  kpi_data['Program_Overview'],
+            'Cohort_Summaries':  kpi_data['Cohort_Summaries'],
+            'Jobs_Summary':      kpi_data['Jobs_Summary'],
+            'Reach_Summary':     kpi_data['Reach_Summary'],
+            'Ventures': [
+                {k: v for k, v in v.items() if k != 'Red Flags'}
+                for v in kpi_data['Venture_Data']
+            ],
+        }
+ 
+        system_prompt = (
+            "Act as 'Injini AI', a helpful data assistant for the Injini EdTech accelerator. "
+            "Answer the user's question based strictly on the data provided. "
+            "Be concise and friendly. Use South African Rands (R) for currency. "
+            "If the answer isn't in the data, say \"I don't have that information in the current dataset.\" "
+            "Format key numbers in bold using Markdown (e.g., **R 500,000**)."
+        )
+        user_prompt = (
+            f"Context Data:\n{json.dumps(context, indent=2, default=str)}\n\n"
+            f"User Question: {user_message}"
+        )
+ 
+        models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
+        for model in models:
+            try:
+                resp = groq_client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {'role': 'system', 'content': system_prompt},
+                        {'role': 'user',   'content': user_prompt},
+                    ],
+                    temperature=0.3,
+                    max_tokens=1024,
+                )
+                return jsonify({'response': resp.choices[0].message.content})
+            except Exception as e:
+                if '429' in str(e) or 'rate_limit' in str(e).lower():
+                    time.sleep(2)
+                    continue
+                raise
+ 
+        return jsonify({'response': "I'm currently at capacity. Please wait a moment and try again."})
+ 
+    except Exception as e:
+        print(f"Chat error: {e}")
+        if '429' in str(e) or 'rate_limit' in str(e).lower():
+            return jsonify({'response': "I'm currently at capacity. Please wait about 60 seconds."})
+        return jsonify({'response': "I'm having trouble connecting right now."}), 500
+ 
+ 
+@app.route('/export')
+def export_csv():
+    raw_df, kpi_data = get_dashboard_data()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        'Business Name', 'Cohort', 'Total Sales (R)', 'Sales Growth %',
+        'Profit Growth %', 'Net Jobs Created', 'Jobs % Change',
+        'Female Jobs', 'Youth Jobs', 'New Female Jobs', 'New Youth Jobs',
+        'Total Subscribers', 'New Subscribers', 'Total Schools', 'Red Flags',
+    ])
+    inv_map = {i['Business Name']: i for i in kpi_data['Investment_Ledger']}
+    for v in kpi_data['Venture_Data']:
+        writer.writerow([
+            v['Business Name'], v['Cohort'],
+            f"{v['Total Sales (R)']:.2f}", v['Sales Growth %'],
+            v['Profit Growth %'], v['Latest Jobs'], v['Jobs Pct Change'],
+            v['Female Jobs'], v['Youth Jobs'],
+            v['New Female Jobs'], v['New Youth Jobs'],
+            v['Total Subscribers'], v['New Subscribers'], v['Total Schools'],
+            '; '.join(v.get('Red Flags', [])),
+        ])
+    response = Response(output.getvalue(), mimetype='text/csv')
+    response.headers['Content-Disposition'] = 'attachment; filename=injini_mel_report.csv'
+    return response
+ 
+ 
 if __name__ == '__main__':
-    print("Testing Airtable Connection...")
-    df = fetch_dashboard_data()
-    print(f"\nTotal records: {len(df)}")
-    print(f"Columns: {list(df.columns)}")
-    print(f"\nSample data:")
-    print(df.head(5).to_string())
+    app.run(debug=True, port=5000)
