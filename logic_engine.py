@@ -1,20 +1,19 @@
-
 import re
 from datetime import datetime
 from statistics import median
-
+ 
 import pandas as pd
-
-
+ 
+ 
 # ──────────────────────────────────────────────────────────────────────────────
 #  Date Parsing  (robust — handles every known Airtable output format)
 # ──────────────────────────────────────────────────────────────────────────────
-
+ 
 _MONTH_ABBR = {
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
 }
-
+ 
 _DATE_FMTS = [
     "%B %Y",                    # September 2023
     "%b %Y",                    # Sep 2023
@@ -26,8 +25,8 @@ _DATE_FMTS = [
     "%Y/%m",                    # 2023/09
     "%d/%m/%Y",                 # 01/09/2023
 ]
-
-
+ 
+ 
 def parse_reporting_month(val) -> pd.Timestamp:
     """
     Convert whatever Airtable returns as 'Reporting Month' into a datetime.
@@ -36,28 +35,28 @@ def parse_reporting_month(val) -> pd.Timestamp:
     # Unwrap linked-record arrays
     if isinstance(val, list):
         val = val[0] if val else None
-
+ 
     if val is None:
         return pd.NaT
-
+ 
     # Coerce to string
     if not isinstance(val, str):
         try:
             val = str(val)
         except Exception:
             return pd.NaT
-
+ 
     val = val.strip()
     if not val or val.lower() in ("unknown", "n/a", "-", "none"):
         return pd.NaT
-
+ 
     # Try every explicit format first
     for fmt in _DATE_FMTS:
         try:
             return datetime.strptime(val, fmt).replace(day=1)
         except ValueError:
             continue
-
+ 
     # Regex fallback: find "MonthWord YYYY" anywhere (e.g. "Report 6 - September 2023")
     m = re.search(r"\b([A-Za-z]+)\b\s+(\d{4})\b", val)
     if m:
@@ -71,7 +70,7 @@ def parse_reporting_month(val) -> pd.Timestamp:
                 return datetime(int(year), dt.month, 1)
             except ValueError:
                 continue
-
+ 
     # Sep-23 style
     m2 = re.match(r"^([A-Za-z]{3})-(\d{2})$", val)
     if m2:
@@ -79,14 +78,14 @@ def parse_reporting_month(val) -> pd.Timestamp:
         yr = int(m2.group(2)) + 2000
         if mon in _MONTH_ABBR:
             return datetime(yr, _MONTH_ABBR[mon], 1)
-
+ 
     return pd.NaT
-
-
+ 
+ 
 # ──────────────────────────────────────────────────────────────────────────────
 #  Tiered Growth Helpers
 # ──────────────────────────────────────────────────────────────────────────────
-
+ 
 def _tiered_sales_growth(series: pd.Series):
     """
     5-tier sales growth per Indicators Definition.
@@ -94,10 +93,10 @@ def _tiered_sales_growth(series: pd.Series):
     """
     clean = series.dropna()
     n = len(clean)
-
+ 
     if n < 6:
         return "Insufficient Data"
-
+ 
     if n < 12:                          # tier ii: 6-11 months
         first = clean.iloc[:3].mean()
         last  = clean.iloc[-3:].mean()
@@ -111,22 +110,22 @@ def _tiered_sales_growth(series: pd.Series):
     else:                               # tier v: 24+ months
         first = clean.iloc[:12].mean()
         last  = clean.iloc[-12:].mean()
-
+ 
     if first == 0:
         return 0.0
     return round(((last - first) / first) * 100, 1)
-
-
+ 
+ 
 def _tiered_profit_growth(series: pd.Series):
     """
     Same tiers as sales growth but uses ABS(denominator) per spec.
     """
     clean = series.dropna()
     n = len(clean)
-
+ 
     if n < 6:
         return "Insufficient Data"
-
+ 
     if n < 12:
         first = clean.iloc[:3].mean()
         last  = clean.iloc[-3:].mean()
@@ -140,17 +139,17 @@ def _tiered_profit_growth(series: pd.Series):
     else:
         first = clean.iloc[:12].mean()
         last  = clean.iloc[-12:].mean()
-
+ 
     denom = abs(first)
     if denom == 0:
         return 0.0
     return round(((last - first) / denom) * 100, 1)
-
-
+ 
+ 
 # ──────────────────────────────────────────────────────────────────────────────
 #  Main KPI Calculator
 # ──────────────────────────────────────────────────────────────────────────────
-
+ 
 def calculate_kpis(df: pd.DataFrame) -> dict:
     """
     Returns the full indicator matrix:
@@ -158,11 +157,11 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         Investment_Ledger, Jobs_Summary, Reach_Summary,
         Time_Series, Red_Flags, Cohort_Detail
     """
-
+ 
     # ── 1. Parse dates ─────────────────────────────────────────────────────────
     df = df.copy()
     df["Date"] = df["Reporting Month"].apply(parse_reporting_month)
-
+ 
     # ── 2. Drop truly unknown / blank businesses ───────────────────────────────
     #       (MUST happen before any groupby so these never appear in output)
     df = df[
@@ -170,7 +169,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         (df["Business Name"].str.strip() != "") &
         (df["Business Name"].str.lower() != "unknown")
     ].copy()
-
+ 
     # ── 3. Add per-business Month_Index (months since that business's start) ──
     # NOTE: We use direct iteration instead of groupby.apply() because pandas 2.x
     #       drops the groupby key column from the result when using apply().
@@ -187,7 +186,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                 df.at[idx, "Month_Index"] = (
                     (d.year - start.year) * 12 + (d.month - start.month) + 1
                 )
-
+ 
     # ── 4. Program-level extended time series (Month_Index normalised) ─────────
     valid_global = df[df["Date"].notna()].copy()
     program_series: dict = {}
@@ -205,7 +204,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "SA Schools":                   "sum",
             "Q1-3 Schools":                 "sum",
         }).sort_index()
-
+ 
         program_series = {
             "months":                  [int(m) for m in prog_monthly.index.tolist()],
             "sales":                   [round(float(v)) for v in prog_monthly["Monthly Sales (R)"]],
@@ -220,64 +219,64 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "reach_sa_schools":        [round(float(v)) for v in prog_monthly["SA Schools"]],
             "reach_q13_schools":       [round(float(v)) for v in prog_monthly["Q1-3 Schools"]],
         }
-
+ 
     # ── 5. Per-venture calculations ────────────────────────────────────────────
     businesses = df.groupby(["Cohort", "Business Name"])
-
+ 
     venture_data:      list = []
     all_sales_growth:  list = []
     all_profit_growth: list = []
     total_net_jobs:    int  = 0
     grand_total_sales: float = 0.0
-
+ 
     # Program-wide accumulators
     prog_total_jobs    = prog_new_jobs   = prog_female_jobs = 0
     prog_youth_jobs    = prog_female_new = prog_youth_new   = 0
     prog_total_sub     = prog_new_sub    = prog_total_schools = 0
     prog_female_stu    = prog_total_stu  = prog_rural_stu     = 0
     prog_disability_stu = 0
-
+ 
     all_time_series: list = []
     red_flags:       list = []
-
+ 
     for (cohort, business), grp in businesses:
         grp = grp.sort_values("Date")
         n = len(grp)
-
+ 
         # Sales / profit
         total_sales     = float(grp["Monthly Sales (R)"].sum())
         grand_total_sales += total_sales
         sales_growth    = _tiered_sales_growth(grp["Monthly Sales (R)"])
         profit_growth   = _tiered_profit_growth(grp["Monthly Net Profit"])
-
+ 
         if isinstance(sales_growth, (int, float)):
             all_sales_growth.append(sales_growth)
         if isinstance(profit_growth, (int, float)):
             all_profit_growth.append(profit_growth)
-
+ 
         # Jobs — baseline = first row, current = last row
         first_jobs  = float(grp.iloc[0]["Total Jobs"]) if n > 0 else 0.0
         last_jobs   = float(grp.iloc[-1]["Total Jobs"]) if n > 0 else 0.0
         net_jobs    = int(last_jobs - first_jobs) if n >= 2 else 0
         total_net_jobs += net_jobs
-
+ 
         current_female = float(grp.iloc[-1]["Female Jobs"]) if n > 0 else 0.0
         first_female   = float(grp.iloc[0]["Female Jobs"])  if n > 0 else 0.0
         current_youth  = float(grp.iloc[-1]["Youth Jobs"])  if n > 0 else 0.0
         first_youth    = float(grp.iloc[0]["Youth Jobs"])   if n > 0 else 0.0
         new_female     = int(current_female - first_female) if n >= 2 else 0
         new_youth      = int(current_youth  - first_youth)  if n >= 2 else 0
-
+ 
         # % Change (individual): (current − baseline) / baseline — consistent with cohort/program
         jobs_pct = round(((last_jobs - first_jobs) / first_jobs) * 100, 1) if first_jobs != 0 else 0.0
-
+ 
         prog_total_jobs  += int(last_jobs)
         prog_new_jobs    += net_jobs
         prog_female_jobs += int(current_female)
         prog_youth_jobs  += int(current_youth)
         prog_female_new  += new_female
         prog_youth_new   += new_youth
-
+ 
         # Reach
         latest_stu   = float(grp.iloc[-1]["Total Subscribers Students"]) if n > 0 else 0.0
         latest_tea   = float(grp.iloc[-1]["Total Subscribers Teachers"]) if n > 0 else 0.0
@@ -288,7 +287,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         latest_female_stu = float(grp.iloc[-1]["Female Students"])    if n > 0 else 0.0
         latest_rural_stu  = float(grp.iloc[-1]["Rural Students"])     if n > 0 else 0.0
         latest_dis_stu    = float(grp.iloc[-1]["Disability Students"]) if n > 0 else 0.0
-
+ 
         prog_total_sub     += venture_subs
         prog_new_sub       += venture_new_subs
         prog_total_schools += venture_schools
@@ -296,7 +295,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         prog_total_stu     += latest_stu
         prog_rural_stu     += latest_rural_stu
         prog_disability_stu += latest_dis_stu
-
+ 
         # Time-series rows
         for _, row in grp.iterrows():
             if pd.notna(row["Date"]):
@@ -308,7 +307,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                     "profit":   float(row["Monthly Net Profit"]),
                     "jobs":     float(row["Total Jobs"]),
                 })
-
+ 
         # Red flags
         flags = []
         if isinstance(sales_growth, (int, float)) and sales_growth < 0:
@@ -320,7 +319,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             flags.append("Low Learner Reach (<8,000/yr)")
         if flags:
             red_flags.append({"Business Name": business, "Cohort": cohort, "Flags": flags})
-
+ 
         venture_data.append({
             "Business Name":   business,
             "Cohort":          cohort,
@@ -339,29 +338,29 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "Months":            n,
             "Red Flags":         flags,
         })
-
+ 
     # ── 6. Program Overview ────────────────────────────────────────────────────
     avg_sales_growth  = round(median(all_sales_growth), 1)  if all_sales_growth  else "Insufficient Data"
     avg_profit_growth = round(median(all_profit_growth), 1) if all_profit_growth else "Insufficient Data"
-
+ 
     # ── 7. Cohort Summaries ────────────────────────────────────────────────────
     cohort_summaries = []
     cohort_growth_data: dict = {}
-
+ 
     for cohort_name, cg in df.groupby("Cohort"):
         biz_count = cg["Business Name"].nunique()
-
+ 
         # Latest snapshot per business (for totals)
         latest = cg.sort_values("Date").groupby("Business Name").last()
         coh_jobs     = float(latest["Total Jobs"].sum())
         coh_baseline = float(cg.sort_values("Date").groupby("Business Name").first()["Total Jobs"].sum())
         coh_jobs_pct = round(((coh_jobs - coh_baseline) / coh_baseline) * 100, 1) if coh_baseline else 0.0
-
+ 
         coh_tot_learners  = float(latest["Total Subscribers Students"].sum())
         coh_tot_educators = float(latest["Total Subscribers Teachers"].sum())
         coh_new_learners  = float(cg["New Subscribers Students"].sum())
         coh_new_educators = float(cg["New Subscribers Teachers"].sum())
-
+ 
         coh_sg, coh_pg, coh_months = [], [], []
         for biz, bg in cg.groupby("Business Name"):
             bs = bg.sort_values("Date")
@@ -370,13 +369,13 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             if isinstance(sg, (int, float)): coh_sg.append(sg)
             if isinstance(pg, (int, float)): coh_pg.append(pg)
             coh_months.append(len(bs))
-
+ 
         med_sg = round(median(coh_sg), 1) if coh_sg else "Insufficient Data"
         med_pg = round(median(coh_pg), 1) if coh_pg else "Insufficient Data"
         avg_mo = sum(coh_months) / len(coh_months) if coh_months else 0
-
+ 
         cohort_growth_data[cohort_name] = {"median_sg": med_sg, "exposure": avg_mo}
-
+ 
         cohort_summaries.append({
             "Cohort":              cohort_name,
             "Ventures":            biz_count,
@@ -391,7 +390,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "Median Sales Growth": med_sg,
             "Median Profit Growth": med_pg,
         })
-
+ 
     # ── 8. Program TWA ─────────────────────────────────────────────────────────
     twa_num = twa_den = 0.0
     for cd in cohort_growth_data.values():
@@ -399,7 +398,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             twa_num += cd["median_sg"] * cd["exposure"]
             twa_den += cd["exposure"]
     program_twa = round(twa_num / twa_den, 1) if twa_den > 0 else "Insufficient Data"
-
+ 
     # ── 9. Investment Ledger ───────────────────────────────────────────────────
     investment_ledger = []
     for (cohort_name, biz), grp in businesses:
@@ -410,7 +409,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "Net Profit":         float(grp["Monthly Net Profit"].sum()),
             "Grants & Investments": float(grp["Grants Value"].sum()),
         })
-
+ 
     # ── 10. Jobs Summary ───────────────────────────────────────────────────────
     prog_baseline = sum(
         float(grp.sort_values("Date").iloc[0]["Total Jobs"])
@@ -419,7 +418,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
     prog_jobs_pct = round(
         ((prog_total_jobs - prog_baseline) / prog_baseline) * 100, 1
     ) if prog_baseline else 0.0
-
+ 
     jobs_summary = {
         "Total Jobs":     int(prog_total_jobs),
         "New Jobs":       int(prog_new_jobs),
@@ -429,12 +428,12 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         "New Female Jobs": int(prog_female_new),
         "New Youth Jobs":  int(prog_youth_new),
     }
-
+ 
     # ── 11. Reach Summary ──────────────────────────────────────────────────────
     female_pct     = round((prog_female_stu   / prog_total_stu) * 100, 1) if prog_total_stu else 0
     rural_pct      = round((prog_rural_stu    / prog_total_stu) * 100, 1) if prog_total_stu else 0
     disability_pct = round((prog_disability_stu / prog_total_stu) * 100, 1) if prog_total_stu else 0
-
+ 
     reach_summary = {
         "Total Subscribers": int(prog_total_sub),
         "New Subscribers":   int(prog_new_sub),
@@ -443,12 +442,12 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         "Rural %":           rural_pct,
         "Disability %":      disability_pct,
     }
-
+ 
     # ── 12. Chart time-series (real calendar months) ───────────────────────────
     ts_df = pd.DataFrame(all_time_series)
     cohort_time_series: dict = {}
     program_time_series = {"months": [], "sales": [], "profit": [], "jobs": []}
-
+ 
     if not ts_df.empty:
         for cname in ts_df["cohort"].unique():
             ct = ts_df[ts_df["cohort"] == cname]
@@ -466,20 +465,20 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "profit": prog_mo["profit"].tolist(),
             "jobs":   prog_mo["jobs"].tolist(),
         }
-
+ 
     # ── 13. Cohort Detail (per-tab drill-down) ─────────────────────────────────
     cohort_detail: dict = {}
-
+ 
     for cohort_name in ["Cohort 1", "Cohort 2", "Cohort 3", "Cohort 4"]:
         cdf  = df[df["Cohort"] == cohort_name].copy()
         valid = cdf[cdf["Date"].notna()].copy()
-
+ 
         fellows_sales  = []
         fellows_profit = []
         coh_sg_vals    = []
         coh_pg_vals    = []
         coh_month_counts = []
-
+ 
         for biz_name, bg in valid.groupby("Business Name"):
             bs  = bg.sort_values("Date")
             n_b = len(bs)
@@ -488,11 +487,11 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             if isinstance(sg, (int, float)): coh_sg_vals.append(sg)
             if isinstance(pg, (int, float)): coh_pg_vals.append(pg)
             coh_month_counts.append(n_b)
-
+ 
             months_str = bs["Date"].dt.strftime("%Y-%m").tolist()
             sales_vals  = [round(float(v)) for v in bs["Monthly Sales (R)"].tolist()]
             profit_vals = [round(float(v)) for v in bs["Monthly Net Profit"].tolist()]
-
+ 
             fellows_sales.append({
                 "name":   biz_name,
                 "growth": sg,
@@ -505,11 +504,11 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                 "months": n_b,
                 "data":   [{"x": m, "y": p} for m, p in zip(months_str, profit_vals)],
             })
-
+ 
         coh_med_sg = round(median(coh_sg_vals), 1) if coh_sg_vals else "Insufficient Data"
         coh_med_pg = round(median(coh_pg_vals), 1) if coh_pg_vals else "Insufficient Data"
         avg_months = sum(coh_month_counts) / len(coh_month_counts) if coh_month_counts else 0
-
+ 
         # Cohort aggregate (sum of all fellows per calendar month)
         if not valid.empty:
             coh_agg = valid.groupby(valid["Date"].dt.strftime("%Y-%m")).agg({
@@ -523,7 +522,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             }
         else:
             cohort_aggregate = {"months": [], "sales": [], "profit": []}
-
+ 
         # Jobs bar chart (monthly aggregate)
         if not valid.empty:
             jm = valid.groupby(valid["Date"].dt.strftime("%Y-%m")).agg({
@@ -537,7 +536,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             }
         else:
             jobs_bar = {"months": [], "total": [], "female": [], "youth": []}
-
+ 
         # Per-fellow jobs time series
         fellows_jobs = []
         if not valid.empty:
@@ -553,7 +552,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                     "female": [round(float(v)) for v in bm["Female Jobs"]],
                     "youth":  [round(float(v)) for v in bm["Youth Jobs"]],
                 })
-
+ 
         # Jobs table (per fellow — latest snapshot, % change = baseline→current)
         jobs_table = []
         for biz_name, bg in cdf.groupby("Business Name"):
@@ -572,7 +571,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                 "name": biz_name, "total": int(ct), "new": new_j,
                 "pct_change": pct, "new_female": new_f, "youth": int(cy),
             })
-
+ 
         # Investments table
         investments_table = []
         for _, row in cdf.iterrows():
@@ -584,7 +583,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                     "investor": str(row.get("Grant Funder", "") or "Not specified"),
                     "month":    str(row.get("Reporting Month", "")),
                 })
-
+ 
         # Reach time series (Total subscribers + schools, per calendar month)
         # NOTE: community_learners/educators are intentionally excluded from charts
         #       per Round 2 feedback ("Remove community learners and educators")
@@ -612,7 +611,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                 "new_learners_cum": [], "new_educators_cum": [],
                 "sa_schools": [], "q13_schools": [],
             }
-
+ 
         # Per-fellow reach time series
         fellows_reach = []
         if not valid.empty:
@@ -636,7 +635,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                     "sa_schools":      [round(float(v)) for v in bm["SA Schools"]],
                     "q13_schools":     [round(float(v)) for v in bm["Q1-3 Schools"]],
                 })
-
+ 
         # Growth % table (with flags + months badge)
         growth_table = []
         for biz_name, bg in cdf.groupby("Business Name"):
@@ -658,7 +657,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                 "months":        n_b,          # ← used by HTML for "Xm cover" badge
                 "flags":         flags,
             })
-
+ 
         # Users table (subscribers per fellow)
         users_table = []
         for biz_name, bg in cdf.groupby("Business Name"):
@@ -681,7 +680,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                 "new_educators": int(new_e),
                 "flags":         u_flags,
             })
-
+ 
         # Learner disaggregation table
         disagg_table = []
         for biz_name, bg in cdf.groupby("Business Name"):
@@ -695,7 +694,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
                     "rural":      int(float(lat.get("Rural Students", 0) or 0)),
                     "disability": int(float(lat.get("Disability Students", 0) or 0)),
                 })
-
+ 
         cohort_detail[cohort_name] = {
             "cohort_median_sg":  coh_med_sg,
             "cohort_median_pg":  coh_med_pg,
@@ -713,7 +712,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "users_table":       users_table,
             "disaggregation":    disagg_table,
         }
-
+ 
     # ── 14. Assemble and return ────────────────────────────────────────────────
     return {
         "Program_Overview": {
@@ -737,16 +736,16 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         "Red_Flags":    red_flags,
         "Cohort_Detail": cohort_detail,
     }
-
-
+ 
+ 
 # ── Smoke test ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import json
     from data_fetcher import fetch_dashboard_data
-
+ 
     print("Fetching …")
     raw = fetch_dashboard_data()
-
+ 
     # Sanity-check date parsing
     raw["_Date"] = raw["Reporting Month"].apply(parse_reporting_month)
     total      = len(raw)
@@ -756,10 +755,10 @@ if __name__ == "__main__":
     if nat_count:
         print("  Sample unparseable values:")
         print(raw.loc[raw["_Date"].isna(), "Reporting Month"].unique()[:10].tolist())
-
+ 
     print("\nCalculating KPIs …")
     result = calculate_kpis(raw)
-
+ 
     ov = result["Program_Overview"]
     print(f"\n--- Program Overview ---")
     print(f"  Ventures:      {ov['Total_Ventures']}")
@@ -767,9 +766,10 @@ if __name__ == "__main__":
     print(f"  Profit Growth: {ov['Average_Profit_Growth_%']}")
     print(f"  Net Jobs:      {ov['Net_Jobs_Created']}")
     print(f"  Program TWA:   {ov['Program_TWA']}")
-
+ 
     print(f"\n--- Cohort Summaries ---")
     for cs in result["Cohort_Summaries"]:
         print(f"  {cs['Cohort']}: {cs['Ventures']} ventures, "
               f"SG={cs['Median Sales Growth']}, "
               f"PG={cs['Median Profit Growth']}")
+ 
