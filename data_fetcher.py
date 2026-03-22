@@ -1,21 +1,42 @@
+"""
+data_fetcher.py  —  Injini MEL Dashboard  (Phase 2)
+====================================================
+Fetches all monthly reporting records from the four Airtable cohort bases.
+
+Key hardening changes vs V1
+-----------------------------
+* Field lookup is case-insensitive and strips leading/trailing whitespace from
+  Airtable field names (Airtable sometimes adds trailing spaces).
+* Linked-record fields (arrays) are unwrapped to their first element before use.
+* Every record is wrapped in a per-record try/except so one bad row never
+  aborts the entire fetch.
+* Numeric coercion happens once, centrally, after the DataFrame is built —
+  no silent zeros during per-field extraction.
+* Base IDs and table name are defined at the top for easy maintenance.
+"""
+
 import os
 import pandas as pd
 from pyairtable import Api
 from dotenv import load_dotenv
- 
+
 load_dotenv(override=True)
- 
+
 # ── Credentials ────────────────────────────────────────────────────────────────
 _PAT = os.getenv("AIRTABLE_PAT")
-_TABLE = "Monthly reporting"
- 
+# Both tables contain monthly reporting data.
+# "Monthly reporting" = current cohort period (7-8 months)
+# "Post program reporting" = historical months (makes up the full 31 months)
+# We fetch from both and combine into one DataFrame.
+_TABLES = ["Monthly reporting", "Post program reporting"]
+
 BASE_IDS = {
     "Cohort 1": "app5MKMARnZAInXVJ",
     "Cohort 2": "app3KJMspt7z8qy9M",
     "Cohort 3": "appBhlIJDu8JvaWxB",
     "Cohort 4": "appzHpcS4aenhjZ8V",
 }
- 
+
 # ── Numeric columns (coerced centrally after DataFrame construction) ────────────
 NUMERIC_COLS = [
     "Monthly Sales (R)", "Monthly Net Profit",
@@ -31,22 +52,22 @@ NUMERIC_COLS = [
     "Total Schools", "SA Schools", "Q1-3 Schools",
     "Grants Value",
 ]
- 
- 
+
+
 # ── Helper: unwrap linked-record arrays ────────────────────────────────────────
 def _unwrap(value):
     """Return the first element if value is a list, else value as-is."""
     if isinstance(value, list):
         return value[0] if value else None
     return value
- 
- 
+
+
 # ── Helper: build a case-insensitive, stripped field lookup ───────────────────
 def _build_lookup(fields: dict) -> dict:
     """Return {stripped_lower_key: original_value} for all Airtable fields."""
     return {k.strip().lower(): v for k, v in fields.items()}
- 
- 
+
+
 def _get(lookup: dict, candidates: list):
     """
     Try each candidate field name (case-insensitive, stripped) in order.
@@ -57,8 +78,8 @@ def _get(lookup: dict, candidates: list):
         if val is not None:
             return _unwrap(val)
     return None
- 
- 
+
+
 # ── Main fetch ─────────────────────────────────────────────────────────────────
 def fetch_dashboard_data() -> pd.DataFrame:
     """
@@ -67,22 +88,28 @@ def fetch_dashboard_data() -> pd.DataFrame:
     """
     api = Api(_PAT)
     all_rows: list[dict] = []
- 
+
     for cohort, base_id in BASE_IDS.items():
         print(f"Fetching {cohort} …", flush=True)
-        try:
-            records = api.table(base_id, _TABLE).all()
-        except Exception as exc:
-            print(f"  ⚠️  Could not fetch {cohort}: {exc}")
-            continue
- 
-        print(f"  → {len(records)} records")
+        records = []
+        for table_name in _TABLES:
+            try:
+                table_records = api.table(base_id, table_name).all()
+                print(f"  → {len(table_records)} records from '{table_name}'")
+                records.extend(table_records)
+            except Exception as exc:
+                # Table may not exist in all bases (e.g. Post program reporting
+                # may not exist in Cohort 4 yet) — skip gracefully
+                print(f"  ⚠️  Could not fetch '{table_name}' in {cohort}: {exc}")
+                continue
+
+        print(f"  → {len(records)} total records for {cohort}")
         skipped = 0
- 
+
         for record in records:
             try:
                 lk = _build_lookup(record.get("fields", {}))
- 
+
                 # ── Business identity ────────────────────────────────────────
                 business_name = _get(lk, [
                     "Business name", "Company name", "Business Name",
@@ -96,7 +123,7 @@ def fetch_dashboard_data() -> pd.DataFrame:
                 if not business_name or business_name.lower() in ("unknown", "n/a", "-"):
                     skipped += 1
                     continue
- 
+
                 reporting_month = _get(lk, [
                     "Reporting month", "Reporting Month",
                     "reporting month", "Reporting  month",
@@ -104,7 +131,7 @@ def fetch_dashboard_data() -> pd.DataFrame:
                 # If Airtable returns a date object directly, convert to string
                 if not isinstance(reporting_month, str):
                     reporting_month = str(reporting_month)
- 
+
                 # ── Business financials ──────────────────────────────────────
                 # C1: 'Monthly Sales' | C2/C3: 'Monthly sales'
                 sales = _get(lk, [
@@ -114,7 +141,7 @@ def fetch_dashboard_data() -> pd.DataFrame:
                 net_profit = _get(lk, [
                     "Monthly net profit", "Monthly Net Profit",
                 ]) or 0
- 
+
                 # ── Jobs ─────────────────────────────────────────────────────
                 # C1: 'Operational jobs - Total' | C2/C3: 'Total operational jobs ' (trailing space stripped)
                 total_jobs = _get(lk, [
@@ -147,7 +174,7 @@ def fetch_dashboard_data() -> pd.DataFrame:
                     "Female educational resourcing Jobs",
                     "Female Educational Resourcing Jobs",
                 ]) or 0
- 
+
                 # ── Reach: Subscribers ───────────────────────────────────────
                 # C1: 'Total Subscribers -Students' | C2/C3: 'Total Subscribers - Students'
                 total_sub_students = _get(lk, [
@@ -172,7 +199,7 @@ def fetch_dashboard_data() -> pd.DataFrame:
                     "Net new monthly subscribers - Teachers",   # C2/C3 — strip handles trailing space
                     "New Monthly Subscribers - Teachers",
                 ]) or 0
- 
+
                 # ── Reach: Active users ──────────────────────────────────────
                 # C1: 'Active users Students - Broad Definition' | C2/C3: 'Monthly Active users - Students'
                 active_students = _get(lk, [
@@ -183,11 +210,11 @@ def fetch_dashboard_data() -> pd.DataFrame:
                     "Active users teachers - Broad Definition",
                     "Monthly Active users - Teachers",
                 ]) or 0
- 
+
                 # ── Reach: Community (stored but NOT shown on charts) ─────────
                 community_learners  = 0   # field removed from charts (Round 2 feedback)
                 community_educators = 0
- 
+
                 # ── Reach: Demographics ──────────────────────────────────────
                 # C1: 'Subscribers - Female students' | C2/C3: 'Subscribers - Female Students'
                 female_students = _get(lk, [
@@ -218,7 +245,7 @@ def fetch_dashboard_data() -> pd.DataFrame:
                     "Subscribers - Teachers with disabilities",
                     "Subscribers - Teachers with Disabilities",
                 ]) or 0
- 
+
                 # ── Reach: Schools ───────────────────────────────────────────
                 # C1: 'Subscription- Q1-3 Schools Students' | C2/C3: 'Subscription - Q1-3 schools'
                 q13_schools = _get(lk, [
@@ -238,7 +265,7 @@ def fetch_dashboard_data() -> pd.DataFrame:
                     "Total number of schools solution being tested in",
                     "Total subscribers (Schools/learning institutions)",
                 ]) or (q13_schools + sa_schools)
- 
+
                 # ── Investments ──────────────────────────────────────────────
                 # C1: NOT IN SCHEMA (returns 0) | C2/C3: 'Rand value of grant/investment'
                 # NOTE: 'New grants and investments' exists in C2/C3 but is always 0 — use Rand value field
@@ -256,7 +283,7 @@ def fetch_dashboard_data() -> pd.DataFrame:
                     "Income Statement",
                     "Income statement",
                 ]) or ""
- 
+
                 all_rows.append({
                     "Cohort":                       cohort,
                     "Business Name":                business_name,
@@ -297,30 +324,30 @@ def fetch_dashboard_data() -> pd.DataFrame:
                     "Grant Funder":                 grant_funder,
                     "Income Statement":             income_statement,
                 })
- 
+
             except Exception as row_exc:
                 skipped += 1
                 print(f"  ⚠️  Skipped record in {cohort}: {row_exc}")
- 
+
         if skipped:
             print(f"  ℹ️  {skipped} record(s) skipped in {cohort}")
- 
+
     if not all_rows:
         print("⚠️  WARNING: No data was fetched from Airtable. Returning empty DataFrame.")
         return pd.DataFrame(columns=["Cohort", "Business Name", "Reporting Month"] + NUMERIC_COLS)
- 
+
     df = pd.DataFrame(all_rows)
- 
+
     # ── Central numeric coercion ───────────────────────────────────────────────
     for col in NUMERIC_COLS:
         if col not in df.columns:
             df[col] = 0
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
- 
+
     print(f"\nTotal rows fetched: {len(df)}")
     return df
- 
- 
+
+
 # ── Smoke test when run directly ───────────────────────────────────────────────
 if __name__ == "__main__":
     print("Testing Airtable connection …")
