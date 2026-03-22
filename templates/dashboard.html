@@ -231,6 +231,47 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Flag Legend -->
+                    <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Flag Definitions</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="flex items-start gap-2">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-100 whitespace-nowrap">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>Negative Sales Growth ⚠️
+                                </span>
+                                <p class="text-xs text-slate-500 leading-relaxed">Sales revenue is lower now than at the start of the measurement period. Calculated using the 5-tier growth formula based on months of data available.</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-100 whitespace-nowrap">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>Negative Profit Growth ⚠️
+                                </span>
+                                <p class="text-xs text-slate-500 leading-relaxed">Net profit is lower now than at the start of the measurement period. Uses the absolute value of the baseline to correctly handle businesses that started at a loss.</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-100 whitespace-nowrap">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>Strong Sales Growth ✨
+                                </span>
+                                <p class="text-xs text-slate-500 leading-relaxed">Sales growth exceeds 20% over the measurement period. Indicates a high-performing venture on the programme.</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-100 whitespace-nowrap">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>Strong Profit Growth ✨
+                                </span>
+                                <p class="text-xs text-slate-500 leading-relaxed">Profit growth exceeds 20% over the measurement period. Indicates strong financial health improvement on the programme.</p>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-slate-200">
+                            <p class="text-[10px] text-slate-400 leading-relaxed">
+                                <span class="font-semibold text-slate-500">Growth calculation method:</span>
+                                Based on months of data available per fellow. &lt;6 months = N/A (insufficient data).
+                                6–11 months = last 3 vs first 3 month average.
+                                12–17 months = last 6 vs first 6 month average.
+                                18–23 months = annualised residual vs first 12 month average.
+                                24+ months = last 12 vs first 12 month average.
+                                The "Xm data" badge shows how many months of reports are included.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -279,7 +320,7 @@
                                 <tr class="bg-injiniBlue/5 font-bold">
                                     <td class="px-6 py-4 text-slate-900 italic">Cohort Total</td>
                                     <td class="px-6 py-4 text-right text-slate-900">{{ "{:,}".format(cd.get('jobs_table', [])|sum(attribute='total')) }}</td>
-                                    <td class="px-6 py-4 text-right text-injiniBlue">+{{ "{:,}".format(cd.get('jobs_table', [])|sum(attribute='new')) }}</td>
+                                    <td class="px-6 py-4 text-right font-mono font-semibold {% if cd.get('jobs_table', [])|sum(attribute='new') >= 0 %}text-injiniGreen{% else %}text-injiniRed{% endif %}">{{ "{:+,}".format(cd.get('jobs_table', [])|sum(attribute='new')) }}</td>
                                     <td class="px-6 py-4 text-right text-slate-600 opacity-60 italic">-</td>
                                     <td class="px-6 py-4 text-right text-injiniBlue">{{ "{:+,}".format(cd.get('jobs_table', [])|sum(attribute='new_female')) }}</td>
                                     <td class="px-6 py-4 text-right text-slate-800">{{ "{:,}".format(cd.get('jobs_table', [])|sum(attribute='youth')) }}</td>
@@ -797,7 +838,7 @@
         <div id="ai-chat-modal"
             class="fixed bottom-28 right-8 w-96 bg-white rounded-2xl shadow-2xl z-50 border border-slate-100 hidden flex flex-col overflow-hidden transition-all duration-300 transform scale-95 opacity-0 origin-bottom-right"
             style="height: 500px;">
-            <div class="bg-gradient-to-r from-injiniBlue to-blue-900 p-4 flex justify-between items-center text-white">
+            <div style="background: linear-gradient(to right, #001c94, #1e3a8a); color: white;" class="p-4 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center">
                         <img src="/static/logo.svg" class="w-5 h-5"
@@ -909,6 +950,51 @@
                         + '<div style="color:#64748b;margin-bottom:3px;">' + label + '</div>'
                         + '<div style="font-weight:600;color:#1e293b;">' + name + ': ' + formatted + '</div>'
                         + '</div>';
+                }
+            };
+        }
+
+        // Multi-series tooltip -- shows ALL series at a data point
+        // Used for subs, newsubs, schools, jobs (2+ real series)
+        function makeMultiSeriesTooltip(prefix) {
+            return {
+                shared: true,
+                intersect: false,
+                y: {
+                    formatter: function(val) {
+                        if (val === null || val === undefined) return 'N/A';
+                        return (prefix || '') + Number(val).toLocaleString();
+                    }
+                }
+            };
+        }
+
+        // -- MULTI-SERIES TOOLTIP (no duplicates for 3-series charts) ----------
+        function makeMultiTooltip() {
+            return {
+                shared: true,
+                intersect: false,
+                custom: function(opts) {
+                    var series         = opts.series;
+                    var dataPointIndex = opts.dataPointIndex;
+                    var w              = opts.w;
+                    var label = (w.globals.categoryLabels && w.globals.categoryLabels[dataPointIndex])
+                        || (w.globals.labels && w.globals.labels[dataPointIndex])
+                        || '';
+                    var rows = '';
+                    var colors = ['#001c94','#008a40','#ffd100'];
+                    for (var i = 0; i < series.length; i++) {
+                        var val = series[i][dataPointIndex];
+                        if (val === undefined || val === null) continue;
+                        rows += '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">'
+                            + '<span style="width:8px;height:8px;border-radius:50%;background:' + colors[i] + ';display:inline-block;"></span>'
+                            + '<span style="color:#64748b;">' + w.globals.seriesNames[i] + ':</span>'
+                            + '<span style="font-weight:600;color:#1e293b;">' + Number(val).toLocaleString() + '</span>'
+                            + '</div>';
+                    }
+                    return '<div style="padding:8px 12px;font-family:Montserrat,sans-serif;font-size:12px;">'
+                        + '<div style="color:#94a3b8;margin-bottom:4px;">' + label + '</div>'
+                        + rows + '</div>';
                 }
             };
         }
@@ -1137,7 +1223,6 @@
                     plotOptions: { bar: { borderRadius: 4, columnWidth: '65%' } },
                     xaxis:  makeCategoryXAxis(d.jobs_bar.months),
                     yaxis:  { labels: { formatter: v => v.toLocaleString(), style: { fontFamily: 'Montserrat' } } },
-                    tooltip: { shared: true, intersect: false, y: { formatter: v => v.toLocaleString() } },
                     legend: { position: 'top', fontSize: '11px', fontFamily: 'Montserrat' },
                     grid:   { borderColor: '#f1f5f9' },
                 });
@@ -1156,7 +1241,7 @@
                     stroke: { width: 2.5, curve: 'smooth' },
                     xaxis:  makeCategoryXAxis(d.reach.months),
                     yaxis:  { labels: { formatter: v => v.toLocaleString(), style: { fontFamily: 'Montserrat' } } },
-                    tooltip: makeTooltip(''),
+                    tooltip: makeMultiSeriesTooltip(''),
                     legend: { position: 'top', fontSize: '11px', fontFamily: 'Montserrat' },
                     grid:   { borderColor: '#f1f5f9' },
                 });
@@ -1174,7 +1259,7 @@
                     fill:   { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
                     xaxis:  makeCategoryXAxis(d.reach.months),
                     yaxis:  { labels: { formatter: v => v.toLocaleString(), style: { fontFamily: 'Montserrat' } } },
-                    tooltip: makeTooltip(''),
+                    tooltip: makeMultiSeriesTooltip(''),
                     legend: { position: 'top', fontSize: '11px', fontFamily: 'Montserrat' },
                     grid:   { borderColor: '#f1f5f9' },
                 });
@@ -1192,7 +1277,6 @@
                     markers: { size: [0, 4, 4] },
                     xaxis:   makeCategoryXAxis(d.reach.months),
                     yaxis:   { labels: { formatter: v => v.toLocaleString(), style: { fontFamily: 'Montserrat' } } },
-                    tooltip: { shared: true, intersect: false, y: { formatter: v => v.toLocaleString() } },
                     legend:  { position: 'top', fontSize: '11px', fontFamily: 'Montserrat' },
                     grid:    { borderColor: '#f1f5f9' },
                 });
@@ -1307,11 +1391,13 @@
             }
         }
 
-        // FIX 10: Overall x-axis always Month 1, 2, 3...
-        function makeOverallXAxis() {
+        // FIX 10: Overall x-axis — Month 1, 2, 3... capped to actual data range
+        function makeOverallXAxis(maxMonths) {
             return {
                 type: 'numeric',
-                tickAmount: 10,
+                min: 1,
+                max: maxMonths || 36,
+                tickAmount: Math.min(maxMonths || 10, 10),
                 labels: {
                     formatter: v => 'M' + Math.round(v),
                     style: { fontSize: '10px', fontFamily: 'Montserrat, sans-serif' }
@@ -1323,31 +1409,80 @@
             };
         }
 
+        // Get max x value across all series
+        function maxX(seriesArr) {
+            let mx = 1;
+            seriesArr.forEach(s => {
+                if (s.data && s.data.length) {
+                    const last = s.data[s.data.length - 1];
+                    const x = typeof last === 'object' ? last.x : last;
+                    if (x > mx) mx = x;
+                }
+            });
+            return mx;
+        }
+
         function initOverallCharts() {
             if (renderedCharts['Overall']) return;
 
-            const lineBase = (colors) => ({
-                chart:  { type: 'line', height: 280, ...chartDefaults, animations: { enabled: false } },
-                stroke: { width: 3, curve: 'smooth' },
-                colors: colors || ['#001c94','#008a40','#ffd100','#ff585f','#3899d6'],
-                xaxis:  makeOverallXAxis(),
-                yaxis:  { labels: { formatter: v => 'R ' + (v/1000).toFixed(0) + 'k', style: { fontFamily: 'Montserrat' } } },
-                tooltip: { shared: true, intersect: false, y: { formatter: v => 'R ' + v.toLocaleString() } },
-                legend: { position: 'top', fontSize: '11px', fontFamily: 'Montserrat' },
-                grid:   { borderColor: '#f1f5f9' },
-            });
+            // Distinct stroke styles per cohort so lines never look identical
+            const cohortStrokes = {
+                dash:  [0, 4, 8, 12],   // solid, short-dash, long-dash, dot-dash
+                width: [3, 3, 3, 3],
+            };
+
+            const lineBase = (seriesArr, colors, yFormatter) => {
+                const mx = maxX(seriesArr);
+                return {
+                    chart:  { type: 'line', height: 300, ...chartDefaults, animations: { enabled: false } },
+                    stroke: {
+                        width: cohortStrokes.width.slice(0, seriesArr.length),
+                        curve: 'smooth',
+                        dashArray: cohortStrokes.dash.slice(0, seriesArr.length),
+                    },
+                    colors: (colors || ['#001c94','#008a40','#ffd100','#ff585f']).slice(0, seriesArr.length),
+                    // Markers — visible dot on every data point
+                    markers: {
+                        size: 5,
+                        strokeWidth: 2,
+                        strokeColors: '#fff',
+                        hover: { size: 8 }
+                    },
+                    // Label at the last data point of each series
+                    dataLabels: {
+                        enabled: true,
+                        enabledOnSeries: seriesArr.map((_, i) => i),
+                        formatter: function(val, opts) {
+                            // Only show label on the last point
+                            const pts = opts.w.globals.series[opts.seriesIndex];
+                            if (opts.dataPointIndex !== pts.length - 1) return '';
+                            return opts.w.globals.seriesNames[opts.seriesIndex];
+                        },
+                        offsetY: -8,
+                        style: { fontSize: '10px', fontFamily: 'Montserrat', fontWeight: 600 },
+                        background: { enabled: true, borderRadius: 3, padding: 3, opacity: 0.85 }
+                    },
+                    xaxis:  makeOverallXAxis(mx + 1),
+                    yaxis:  { labels: { formatter: yFormatter || (v => 'R ' + (v/1000).toFixed(0) + 'k'), style: { fontFamily: 'Montserrat' } } },
+                    tooltip: { shared: false, intersect: true, y: { formatter: yFormatter || (v => 'R ' + v.toLocaleString()) } },
+                    legend: { position: 'top', fontSize: '11px', fontFamily: 'Montserrat' },
+                    grid:   { borderColor: '#f1f5f9' },
+                };
+            };
 
             const sd = getOverallSeriesAndVal('sales', 'total');
             if (sd.series.length) {
                 renderedCharts['overall-sales'] = new ApexCharts(
-                    document.querySelector('#overall-sales-chart'), { ...lineBase(), series: sd.series });
+                    document.querySelector('#overall-sales-chart'),
+                    { ...lineBase(sd.series, ['#001c94','#008a40','#ffd100','#ff585f']), series: sd.series });
                 renderedCharts['overall-sales'].render();
             }
 
             const pd = getOverallSeriesAndVal('profit', 'total');
             if (pd.series.length) {
                 renderedCharts['overall-profit'] = new ApexCharts(
-                    document.querySelector('#overall-profit-chart'), { ...lineBase(), series: pd.series });
+                    document.querySelector('#overall-profit-chart'),
+                    { ...lineBase(pd.series, ['#001c94','#008a40','#ffd100','#ff585f']), series: pd.series });
                 renderedCharts['overall-profit'].render();
             }
 
@@ -1368,21 +1503,34 @@
                 renderedCharts['overall-jobs'].render();
             }
 
-            const rSubsBase = {
+            const rSubsBase = (seriesArr) => ({
                 chart:  { type: 'line', height: 280, ...chartDefaults, animations: { enabled: false } },
-                stroke: { width: 2.5, curve: 'smooth' },
-                colors: ['#001c94','#008a40'],
-                xaxis:  makeOverallXAxis(),
+                stroke: { width: [3,3,3], curve: 'smooth', dashArray: [0,4,8].slice(0, seriesArr.length) },
+                colors: ['#001c94','#008a40','#3899d6'],
+                markers: { size: 5, strokeWidth: 2, strokeColors: '#fff', hover: { size: 8 } },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function(val, opts) {
+                        const pts = opts.w.globals.series[opts.seriesIndex];
+                        if (opts.dataPointIndex !== pts.length - 1) return '';
+                        return opts.w.globals.seriesNames[opts.seriesIndex];
+                    },
+                    offsetY: -8,
+                    style: { fontSize: '10px', fontFamily: 'Montserrat', fontWeight: 600 },
+                    background: { enabled: true, borderRadius: 3, padding: 3, opacity: 0.85 }
+                },
+                xaxis:  makeOverallXAxis(maxX(seriesArr) + 1),
                 yaxis:  { labels: { formatter: v => v.toLocaleString(), style: { fontFamily: 'Montserrat' } } },
-                tooltip: { shared: true, intersect: false, y: { formatter: v => v.toLocaleString() } },
+                tooltip: { shared: false, intersect: true, y: { formatter: v => v.toLocaleString() } },
                 legend: { position: 'top', fontSize: '11px', fontFamily: 'Montserrat' },
                 grid:   { borderColor: '#f1f5f9' },
-            };
+            });
 
             const sd2 = getOverallSeriesAndVal('subs', 'total');
             if (sd2.series.length) {
                 renderedCharts['overall-subs'] = new ApexCharts(
-                    document.querySelector('#overall-subs-chart'), { ...rSubsBase, series: sd2.series });
+                    document.querySelector('#overall-subs-chart'),
+                    { ...rSubsBase(sd2.series), series: sd2.series });
                 renderedCharts['overall-subs'].render();
             }
 
@@ -1390,8 +1538,8 @@
             if (nd.series.length) {
                 renderedCharts['overall-newsubs'] = new ApexCharts(
                     document.querySelector('#overall-newsubs-chart'), {
-                    ...rSubsBase,
-                    chart: { ...rSubsBase.chart, type: 'area' },
+                    ...rSubsBase(nd.series),
+                    chart: { type: 'area', height: 280, ...chartDefaults, animations: { enabled: false } },
                     fill:  { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
                     series: nd.series,
                 });
@@ -1402,10 +1550,10 @@
             if (scD.series.length) {
                 renderedCharts['overall-schools'] = new ApexCharts(
                     document.querySelector('#overall-schools-chart'), {
-                    ...rSubsBase,
+                    ...rSubsBase(scD.series),
                     colors:  ['#001c94','#008a40','#ffd100'],
                     stroke:  { width: [3,2,2], curve: 'smooth', dashArray: [0,0,6] },
-                    markers: { size: [0,4,4] },
+                    markers: { size: 5, strokeWidth: 2, strokeColors: '#fff', hover: { size: 8 } },
                     series:  scD.series,
                 });
                 renderedCharts['overall-schools'].render();
