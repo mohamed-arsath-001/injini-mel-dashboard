@@ -31,7 +31,7 @@ groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 def _safe_json(data) -> str:
     """
     Serialise data to JSON and escape sequences that would prematurely close
-    a <script> tag in the browser (</ --> <\/).
+    a <script> tag in the browser.
     Without this, business names or text fields containing '</' break the
     entire JS block with "Unexpected token '{'".
     """
